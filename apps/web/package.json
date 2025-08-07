@@ -1,0 +1,36 @@
+{
+  "name": "web",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "rsbuild dev",
+    "build": "rsbuild build",
+    "lint": "cd ../.. && pnpm eslint apps/web/src",
+    "lint:fix": "cd ../.. && pnpm eslint apps/web/src --fix"
+  },
+  "dependencies": {
+    "garfish": "1.19.5",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-router": "6.26.2",
+    "react-router-dom": "6.26.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.32.0",
+    "@rsbuild/core": "1.4.13",
+    "@rsbuild/plugin-react": "1.3.4",
+    "@types/node": "22.13.10",
+    "@types/react": "18.3.17",
+    "@types/react-dom": "18.3.5",
+    "eslint": "9.32.0",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-react": "7.37.5",
+    "eslint-plugin-react-hooks": "5.2.0",
+    "eslint-plugin-simple-import-sort": "12.1.1",
+    "globals": "16.3.0",
+    "prettier": "3.6.2",
+    "typescript": "5.9.2",
+    "typescript-eslint": "8.39.0"
+  }
+}

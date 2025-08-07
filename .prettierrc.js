@@ -1,36 +1,60 @@
-// 优先使用本全局唯一的 prettier 配置文件
-// 配置可参考 https://prettier.io/en/configuration.html、https://www.cnblogs.com/oneweek/p/11236515.html
 module.exports = {
-  // 使用较大的打印宽度，因为 Prettier 的换行设置似乎是针对没有注释的 JavaScript.
-  printWidth: 120,
-
-  // 使用 .gitattributes 来管理换行，尾空行
-  endOfLine: 'lf',
-
-  // 单引号代替双引号
-  singleQuote: true,
-
-  // 句尾添加分号
-  semi: true,
-
-  // 缩进字节数
+  // Print width
+  printWidth: 100,
+  
+  // Tab width
   tabWidth: 2,
-
-  // 缩进不使用tab，使用空格
+  
+  // Use tabs instead of spaces
   useTabs: false,
-
-  // 箭头函数省略括号
-  arrowParens: 'avoid',
-
-  // 属性换行
-  bracketSameLine: false,
-
-  // react组件标签>单独一行
-  jsxBracketSameLine: false,
-
-  // 在对象或数组最后一个元素后面是否加逗号（在ES5中加尾逗号）
-  trailingComma: 'all',
-
-  // 在对象，数组括号与文字之间加空格 "{ foo: bar }"
+  
+  // Semicolons
+  semi: true,
+  
+  // Use single quotes
+  singleQuote: true,
+  
+  // Quote properties in objects only when needed
+  quoteProps: 'as-needed',
+  
+  // Use single quotes in JSX
+  jsxSingleQuote: true,
+  
+  // Trailing commas
+  trailingComma: 'es5',
+  
+  // Spaces inside object literals
   bracketSpacing: true,
+  
+  // JSX bracket placement
+  bracketSameLine: false,
+  
+  // Arrow function parentheses
+  arrowParens: 'avoid',
+  
+  // Range formatting
+  rangeStart: 0,
+  rangeEnd: Infinity,
+  
+  // Parser
+  requirePragma: false,
+  insertPragma: false,
+  
+  // Prose wrap
+  proseWrap: 'preserve',
+  
+  // HTML whitespace sensitivity
+  htmlWhitespaceSensitivity: 'css',
+  
+  // Vue files script and style tags indentation
+  vueIndentScriptAndStyle: false,
+  
+  // End of line
+  endOfLine: 'lf',
+  
+  // Embedded language formatting
+  embeddedLanguageFormatting: 'auto',
+  
+  // Single attribute per line in HTML, Vue and JSX
+  singleAttributePerLine: false,
 };

@@ -1,0 +1,80 @@
+# pnpm configuration file
+# See: https://pnpm.io/pnpmrc
+
+# Monorepo settings
+# Enable shared workspace lockfile
+shared-workspace-lockfile=true
+
+# Hoist dependencies to root node_modules when possible
+hoist=true
+
+# Hoist patterns for commonly used packages
+hoist-pattern[]=*eslint*
+hoist-pattern[]=*prettier*
+hoist-pattern[]=*typescript*
+hoist-pattern[]=*@types/*
+
+# Performance optimizations
+# Use hard links instead of copying files (faster installs)
+package-import-method=hardlink
+
+# Enable strict peer dependencies checking
+strict-peer-dependencies=true
+
+# Auto install peer dependencies
+auto-install-peers=true
+
+# Dedupe injected dependencies
+dedupe-injected-deps=true
+
+# Node.js settings
+# Use the node version from .nvmrc or package.json engines
+use-node-version=18.18.0
+
+# Registry settings
+# Use npm registry as default
+registry=https://registry.npmjs.org/
+
+# Store settings
+# Use a global store to save disk space across projects
+# store-dir=~/.pnpm-store (default)
+
+# Lockfile settings
+# Always update lockfile (ensure consistency)
+frozen-lockfile=false
+
+# Workspace settings
+# Prefer workspace packages over registry packages
+prefer-workspace-packages=true
+
+# Link workspace packages even if they're not in dependencies
+link-workspace-packages=deep
+
+# Publishing settings
+# Prevent accidental publishing of workspace packages
+publish-branch=main
+
+# Security settings
+# Verify package signatures when available
+verify-store-integrity=true
+
+# Logging settings
+# Show more detailed logs during install
+loglevel=info
+
+# Progress settings
+# Show progress during long operations
+progress=true
+
+# Network settings
+# Timeout for network requests (in milliseconds)
+fetch-timeout=60000
+fetch-retries=3
+
+# Cache settings
+# Enable metadata cache for faster subsequent installs
+metadata-cache-max-age=86400000
+
+# Side effects cache for better performance
+side-effects-cache=true
+side-effects-cache-readonly=false
