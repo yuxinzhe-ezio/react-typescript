@@ -40,8 +40,8 @@ registry=https://registry.npmjs.org/
 # store-dir=~/.pnpm-store (default)
 
 # Lockfile settings
-# Always update lockfile (ensure consistency)
-frozen-lockfile=false
+# Generate lockfile (ensure consistency)
+# frozen-lockfile=false (commented out - let pnpm use default behavior)
 
 # Workspace settings
 # Prefer workspace packages over registry packages
