@@ -1,0 +1,40 @@
+{
+  "name": "@react-typescript/i18n",
+  "version": "0.1.0",
+  "description": "Internationalization utilities for React TypeScript monorepo",
+  "main": "lib/index.js",
+  "module": "es/index.js",
+  "types": "lib/index.d.ts",
+  "files": [
+    "lib",
+    "es",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc && tsc --module es2015 --outDir es",
+    "dev": "tsc --watch",
+    "clean": "rm -rf lib es",
+    "type-check": "tsc --noEmit",
+    "lint": "cd ../.. && pnpm eslint packages/i18n/src",
+    "lint:fix": "cd ../.. && pnpm eslint packages/i18n/src --fix"
+  },
+  "keywords": [
+    "i18n",
+    "internationalization",
+    "localization",
+    "react",
+    "typescript"
+  ],
+  "author": "",
+  "license": "MIT",
+  "peerDependencies": {
+    "react": ">=16.8.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.17",
+    "typescript": "^5.9.2"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  }
+}
