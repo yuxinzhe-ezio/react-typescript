@@ -26,3 +26,5 @@ declare global {
     Garfish?: unknown;
   }
 }
+
+declare const __VERSION__: string;

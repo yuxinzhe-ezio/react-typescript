@@ -10,6 +10,7 @@ const Home: React.FC = () => {
   return (
     <div className={styles.container}>
       <Title level={1}>Welcome to React + Ant Design</Title>
+      <Paragraph>Version: {__VERSION__}</Paragraph>
       <Paragraph>This is a React 18 application with Ant Design 5.x integration.</Paragraph>
 
       <Space direction="vertical" size="large" className={styles.content}>

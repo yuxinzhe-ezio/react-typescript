@@ -11,7 +11,7 @@ on:
       - '.github/workflows/deploy-pages.yml'
   pull_request:
     branches: [ master ]
-    types: [ closed ]
+    types: [ opened, synchronize, closed ]
   workflow_dispatch:
 
 env:
@@ -20,7 +20,9 @@ env:
 
 jobs:
   build-and-deploy:
-    # 仅在 master push 或 目标为 master 的 PR 被合并时运行
+    # 合并两套流程：
+    # - master push 一律执行（含发布）
+    # - 合并 PR 时执行构建
     if: >
       github.event_name == 'push' ||
       (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true)
@@ -56,11 +58,16 @@ jobs:
       - name: Install dependencies (pnpm)
         run: pnpm install --frozen-lockfile
 
+      - name: Generate version
+        run: |
+          chmod +x .github/scripts/gen-version.sh
+          .github/scripts/gen-version.sh
+
       - name: Build apps/web
         working-directory: ${{ env.PROJECT_DIR }}
         run: pnpm run build
 
-      # 安装 Wrangler 并通过 Cloudflare Open API 发布到 Pages
+      # 安装 Wrangler 并通过 Cloudflare Open API 发布到 Pages（仅 push 发布）
       - name: Publish to Cloudflare Pages
         run: |
           echo "Run ID: ${{ github.run_id }}"
