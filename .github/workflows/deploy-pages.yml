@@ -1,0 +1,66 @@
+name: Build & Deploy to Cloudflare Pages (apps/web + pnpm)
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'apps/web/**'
+      - 'packages/**'               # 如果 web 依赖 monorepo 内的包，保留；否则可删
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+      - '.github/workflows/deploy-pages.yml'
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20'
+  PROJECT_DIR: apps/web
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ env.PROJECT_DIR }}
+      cancel-in-progress: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 设置 pnpm（建议 v9），并启用 pnpm 缓存
+      - name: Setup Node & pnpm
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      # 安装依赖（monorepo 推荐在仓库根执行）
+      - name: Install dependencies (pnpm)
+        run: pnpm install --frozen-lockfile
+
+      # 构建 apps/web
+      - name: Build apps/web
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: pnpm run build
+
+      # 安装 Wrangler 并通过 Cloudflare Open API 发布到 Pages
+      - name: Publish to Cloudflare Pages
+        run: |
+          pnpm dlx wrangler@^3 pages publish "${{ env.PROJECT_DIR }}/dist" \
+            --project-name "react-typescripts" \
+            --branch "main"
+        env:
+          CLOUDFLARE_API_TOKEN: ”XIrS_vkWeo21A1RFrRQJsjvda8hcOy0eBFoMiK0e“
+          CLOUDFLARE_ACCOUNT_ID: "ac3f4e7c2d13fc982257587ac4e866a6"
+
+      # 可选：把此次构建的 dist 归档，方便下载/核对
+      - name: Upload dist artifact (optional)
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-apps-web
+          path: ${{ env.PROJECT_DIR }}/dist
+          if-no-files-found: warn
+          retention-days: 7

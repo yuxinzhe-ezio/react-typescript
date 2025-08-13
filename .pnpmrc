@@ -27,26 +27,13 @@ auto-install-peers=true
 # Dedupe injected dependencies
 dedupe-injected-deps=true
 
-# Node.js settings
-# Use the node version from .nvmrc or package.json engines
-use-node-version=18.18.0
-
-# Registry settings
-# Use npm registry as default
-registry=https://registry.npmjs.org/
-
 # Store settings
 # Use a global store to save disk space across projects
 # store-dir=~/.pnpm-store (default)
 
 # Lockfile settings
-# Generate lockfile (ensure consistency)
-# frozen-lockfile=false (commented out - let pnpm use default behavior)
 
 # Workspace settings
-# Prefer workspace packages over registry packages
-prefer-workspace-packages=true
-
 # Link workspace packages even if they're not in dependencies
 link-workspace-packages=deep
 
