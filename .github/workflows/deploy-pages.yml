@@ -49,11 +49,11 @@ jobs:
       # 安装 Wrangler 并通过 Cloudflare Open API 发布到 Pages
       - name: Publish to Cloudflare Pages
         run: |
-          pnpm dlx wrangler@^3 pages publish "${{ env.PROJECT_DIR }}/dist" \
+          pnpm dlx wrangler@^3 pages deploy "${{ env.PROJECT_DIR }}/dist" \
             --project-name "react-typescripts" \
-            --branch "main"
+            --branch "master"
         env:
-          CLOUDFLARE_API_TOKEN: ”XIrS_vkWeo21A1RFrRQJsjvda8hcOy0eBFoMiK0e“
+          CLOUDFLARE_API_TOKEN: "XIrS_vkWeo21A1RFrRQJsjvda8hcOy0eBFoMiK0e"
           CLOUDFLARE_ACCOUNT_ID: "ac3f4e7c2d13fc982257587ac4e866a6"
 
       # 可选：把此次构建的 dist 归档，方便下载/核对
