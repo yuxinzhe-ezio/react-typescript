@@ -19,7 +19,7 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-${{ env.PROJECT_DIR }}
+      group: ${{ github.workflow }}-${{ github.ref }}-react-typescripts
       cancel-in-progress: true
 
     steps:
