@@ -34,15 +34,23 @@ jobs:
         uses: actions/checkout@v4
 
       # 先安装 pnpm，再设置 Node（并启用 pnpm 缓存）
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.14.0
+      - name: Print run info
+        run: |
+          echo "Run ID: ${{ github.run_id }}"
+          echo "Run Number: ${{ github.run_number }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "SHA: ${{ github.sha }}"
+
       - name: Setup Node & pnpm
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.14.0
 
       # 安装依赖（monorepo 推荐在仓库根执行）
       - name: Install dependencies (pnpm)
@@ -55,6 +63,7 @@ jobs:
       # 安装 Wrangler 并通过 Cloudflare Open API 发布到 Pages
       - name: Publish to Cloudflare Pages
         run: |
+          echo "Run ID: ${{ github.run_id }}"
           pnpm dlx wrangler@^3 pages deploy "${{ env.PROJECT_DIR }}/dist" \
             --project-name "react-typescripts" \
             --branch "master"
