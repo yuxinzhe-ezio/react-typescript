@@ -11,7 +11,7 @@ on:
       - '.github/workflows/deploy-pages.yml'
   pull_request:
     branches: [ master ]
-    types: [ opened, synchronize, closed ]
+    types: [ opened, synchronize ]
   workflow_dispatch:
 
 env:
@@ -23,9 +23,6 @@ jobs:
     # 合并两套流程：
     # - master push 一律执行（含发布）
     # - 合并 PR 时执行构建
-    if: >
-      github.event_name == 'push' ||
-      (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true)
     runs-on: ubuntu-latest
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref_name }}-react-typescripts
@@ -73,7 +70,7 @@ jobs:
           echo "Run ID: ${{ github.run_id }}"
           pnpm dlx wrangler@^3 pages deploy "${{ env.PROJECT_DIR }}/dist" \
             --project-name "react-typescripts" \
-            --branch "master"
+            --branch "${{ github.ref_name }}"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
