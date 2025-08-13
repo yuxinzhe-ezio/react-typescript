@@ -54,7 +54,6 @@ jobs:
             --branch "master"
         env:
           CLOUDFLARE_API_TOKEN: "XIrS_vkWeo21A1RFrRQJsjvda8hcOy0eBFoMiK0e"
-          CLOUDFLARE_ACCOUNT_ID: "ac3f4e7c2d13fc982257587ac4e866a6"
 
       # 可选：把此次构建的 dist 归档，方便下载/核对
       - name: Upload dist artifact (optional)
