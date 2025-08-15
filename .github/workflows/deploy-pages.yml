@@ -31,15 +31,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      # 先安装 pnpm，再设置 Node（并启用 pnpm 缓存）
+        
       - name: Print run info
         run: |
           echo "Run ID: ${{ github.run_id }}"
           echo "Run Number: ${{ github.run_number }}"
           echo "Ref: ${{ github.ref }}"
           echo "SHA: ${{ github.sha }}"
-          
+        
+      # 先安装 pnpm，再设置 Node（并启用 pnpm 缓存）
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -49,20 +49,19 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          cache: pnpm
 
       # 安装依赖（monorepo 推荐在仓库根执行）
       - name: Install dependencies (pnpm)
         run: pnpm install --frozen-lockfile
 
       - name: Generate version
-        run: |
-          chmod +x .github/scripts/gen-version.sh
-          .github/scripts/gen-version.sh
+        id: gen_version
+        run: echo "version=$(npx --yes tsx .github/scripts/gen-version.ts)" >> $GITHUB_OUTPUT
 
       - name: Build apps/web
         working-directory: ${{ env.PROJECT_DIR }}
-        run: pnpm run build
+        run: VERSION=${{ steps.gen_version.outputs.version }} pnpm run build
 
       # 安装 Wrangler 并通过 Cloudflare Open API 发布到 Pages（仅 push 发布）
       - name: Publish to Cloudflare Pages
