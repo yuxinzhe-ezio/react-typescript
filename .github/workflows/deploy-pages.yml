@@ -11,7 +11,7 @@ on:
       - '.github/workflows/deploy-pages.yml'
   pull_request:
     branches: [ master ]
-    types: [ closed ]
+    types: [ opened, synchronize ]
   workflow_dispatch:
 
 env:
@@ -20,10 +20,9 @@ env:
 
 jobs:
   build-and-deploy:
-    # 仅在 master push 或 目标为 master 的 PR 被合并时运行
-    if: >
-      github.event_name == 'push' ||
-      (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true)
+    # 合并两套流程：
+    # - master push 一律执行（含发布）
+    # - 合并 PR 时执行构建
     runs-on: ubuntu-latest
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref_name }}-react-typescripts
@@ -32,15 +31,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      # 先安装 pnpm，再设置 Node（并启用 pnpm 缓存）
+        
       - name: Print run info
         run: |
           echo "Run ID: ${{ github.run_id }}"
           echo "Run Number: ${{ github.run_number }}"
           echo "Ref: ${{ github.ref }}"
           echo "SHA: ${{ github.sha }}"
-          
+        
+      # 先安装 pnpm，再设置 Node（并启用 pnpm 缓存）
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -50,23 +49,27 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          cache: pnpm
 
       # 安装依赖（monorepo 推荐在仓库根执行）
       - name: Install dependencies (pnpm)
         run: pnpm install --frozen-lockfile
 
+      - name: Generate version
+        id: gen_version
+        run: echo "version=$(npx --yes tsx .github/scripts/gen-version.ts)" >> $GITHUB_OUTPUT
+
       - name: Build apps/web
         working-directory: ${{ env.PROJECT_DIR }}
-        run: pnpm run build
+        run: VERSION=${{ steps.gen_version.outputs.version }} pnpm run build
 
-      # 安装 Wrangler 并通过 Cloudflare Open API 发布到 Pages
+      # 安装 Wrangler 并通过 Cloudflare Open API 发布到 Pages（仅 push 发布）
       - name: Publish to Cloudflare Pages
         run: |
           echo "Run ID: ${{ github.run_id }}"
           pnpm dlx wrangler@^3 pages deploy "${{ env.PROJECT_DIR }}/dist" \
             --project-name "react-typescripts" \
-            --branch "master"
+            --branch "${{ github.ref_name }}"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
