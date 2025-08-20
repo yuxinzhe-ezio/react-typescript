@@ -1,83 +1,111 @@
-name: Build & Deploy to Cloudflare Pages (apps/web + pnpm)
+name: Build & Deploy to Cloudflare Pages (multi-project + yarn)
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
     paths:
-      - 'apps/web/**'
-      - 'packages/**'               # 如果 web 依赖 monorepo 内的包，保留；否则可删
+      - 'apps/**'
+      - 'packages/**'
       - 'pnpm-lock.yaml'
       - 'package.json'
       - '.github/workflows/deploy-pages.yml'
   pull_request:
-    branches: [ master ]
-    types: [ opened, synchronize ]
+    branches: [master]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+      - '.github/workflows/deploy-pages.yml'
   workflow_dispatch:
 
 env:
-  NODE_VERSION: '20'
-  PROJECT_DIR: apps/web
+  NODE_VERSION: 22.18.0
 
 jobs:
   build-and-deploy:
-    # 合并两套流程：
-    # - master push 一律执行（含发布）
-    # - 合并 PR 时执行构建
+    # 集成分支的 push 一律构建；PR 仅在带 deploy 标签时构建（精确匹配）
+    if: >-
+      github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (
+        github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy')
+      )
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - project: web3
+            cf: plaud-web3
+          - project: web
+            cf: plaud-web
+          - project: editor
+            cf: plaud-editor
     concurrency:
-      group: ${{ github.workflow }}-${{ github.ref_name }}-react-typescripts
+      group: ${{ github.workflow }}-${{ github.ref_name }}-${{ matrix.project }}
       cancel-in-progress: true
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        
-      - name: Print run info
-        run: |
-          echo "Run ID: ${{ github.run_id }}"
-          echo "Run Number: ${{ github.run_number }}"
-          echo "Ref: ${{ github.ref }}"
-          echo "SHA: ${{ github.sha }}"
-        
-      # 先安装 pnpm，再设置 Node（并启用 pnpm 缓存）
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.14.0
-
-      - name: Setup Node & pnpm
+      # 设置 Node 并启用 yarn 缓存
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
+          cache: yarn
+          cache-dependency-path: yarn.lock
 
-      # 安装依赖（monorepo 推荐在仓库根执行）
-      - name: Install dependencies (pnpm)
-        run: pnpm install --frozen-lockfile
+      - name: Restore Yarn tarball cache
+        id: yarn_cache_restore
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.cache/yarn/v6
+          key: yarn-cache-${{ runner.os }}-${{ env.NODE_VERSION }}-${{ hashFiles('yarn.lock') }}
 
-      - name: Generate version
-        id: gen_version
-        run: echo "version=$(npx --yes tsx .github/scripts/gen-version.ts)" >> $GITHUB_OUTPUT
-
-      - name: Build apps/web
-        working-directory: ${{ env.PROJECT_DIR }}
-        run: VERSION=${{ steps.gen_version.outputs.version }} pnpm run build
-
-      # 安装 Wrangler 并通过 Cloudflare Open API 发布到 Pages（仅 push 发布）
-      - name: Publish to Cloudflare Pages
+      - name: Prepare (version + install)
+        id: prepare
         run: |
-          echo "Run ID: ${{ github.run_id }}"
-          pnpm dlx wrangler@^3 pages deploy "${{ env.PROJECT_DIR }}/dist" \
-            --project-name "react-typescripts" \
+          npx --yes tsx .github/scripts/gen-version.ts
+          yarn install --frozen-lockfile --prefer-offline
+
+      - name: Save Yarn tarball cache (save when not restored)
+        if: ${{ steps.yarn_cache_restore.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.cache/yarn/v6
+          key: yarn-cache-${{ runner.os }}-${{ env.NODE_VERSION }}-${{ hashFiles('yarn.lock') }}
+
+      - name: Build ${{ matrix.project }}
+        working-directory: ${{ matrix.project }}
+        run: yarn build
+        env:
+          OUT_DIR: dist
+          PUBLIC_PATH: ./
+          VERSION: ${{ env.VERSION }}
+          CF_PAGES_PROJECT: ${{ matrix.cf }}
+
+      # 发布并通知 Lark
+      - name: Publish to Cloudflare Pages & Notify Lark
+        id: publish
+        run: |
+          npx --yes wrangler@^3 pages deploy "${{ matrix.project }}/dist" \
+            --project-name "${{ matrix.cf }}" \
             --branch "${{ github.ref_name }}"
+          PR_URL="${{ github.event.pull_request.html_url }}" \
+          BRANCH_NAME="${{ github.head_ref || github.ref_name }}" \
+          JOB_STATUS=success \
+          GITHUB_RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+          CF_PAGES_PROJECT="${{ matrix.cf }}" \
+          npx --yes tsx .github/scripts/send-lark.ts --type interactive --title "${{ matrix.cf }} (${{ env.VERSION }})"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      # 可选：把此次构建的 dist 归档，方便下载/核对
+          LARK_WEBHOOK_URL: ${{ secrets.LARK_WEBHOOK_URL }}
+
       - name: Upload dist artifact (optional)
         uses: actions/upload-artifact@v4
         with:
-          name: dist-apps-web
-          path: ${{ env.PROJECT_DIR }}/dist
+          name: dist-${{ matrix.cf }}
+          path: ${{ matrix.project }}/dist
           if-no-files-found: warn
           retention-days: 7
