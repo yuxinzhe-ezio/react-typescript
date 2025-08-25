@@ -5,10 +5,10 @@ import { Spin } from 'antd';
 
 import routes, { RouteConfig } from './routes';
 
-// Loading组件
+// Loading component
 const PageLoading: React.FC = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
-    <Spin size="large" />
+    <Spin size='large' />
   </div>
 );
 
