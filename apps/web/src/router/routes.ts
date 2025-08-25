@@ -16,11 +16,6 @@ export const routes: RouteConfig[] = [
     element: Home,
     index: true,
   },
-  // 可以在这里添加更多路由
-  // {
-  //   path: '/about',
-  //   element: lazy(() => import('../pages/about')),
-  // },
 ];
 
 export default routes;
