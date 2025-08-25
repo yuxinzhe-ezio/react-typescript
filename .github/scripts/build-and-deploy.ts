@@ -38,7 +38,7 @@ const main = async (): Promise<void> => {
     }
 
     // Build
-    run('yarn build', {
+    run('pnpm build', {
       cwd: project,
       env: {
         VERSION: process.env.VERSION || '',
