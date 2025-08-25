@@ -51,11 +51,16 @@ jobs:
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
 
-      - name: Restore pnpm store
-        uses: actions/cache@v3
+      - name: Cache node_modules
+        uses: actions/cache@v4
         with:
-          path: ~/.pnpm-store
-          key: pnpm-store-${{ runner.os }}-${{ env.NODE_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+          key: node_modules-${{ runner.os }}-${{ env.NODE_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            node_modules-${{ runner.os }}-${{ env.NODE_VERSION }}-
 
       - name: Prepare (version + install)
         id: prepare
