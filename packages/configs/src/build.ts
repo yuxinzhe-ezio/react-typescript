@@ -31,6 +31,21 @@ export const PROJECT_BUILD_CONFIGS: Record<string, ProjectBuildConfig> = {
       dev: {},
     },
   },
+  web2: {
+    projectPath: 'apps/web2',
+    cloudflareProject: 'react-typescripts-v2',
+    buildDir: 'dist',
+    publicPath: './',
+    envCommon: {
+      OUT_DIR: 'dist',
+      PUBLIC_PATH: './',
+    },
+    envPerEnv: {
+      prod: {},
+      test: {},
+      dev: {},
+    },
+  },
 };
 
 export function resolveBuildEnv(cfg: ProjectBuildConfig, envName: string): BuildEnv {
