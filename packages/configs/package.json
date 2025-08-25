@@ -1,0 +1,15 @@
+{
+  "name": "configs",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Shared ESLint and TypeScript base configs (aligned with web3)",
+  "type": "module",
+  "exports": {
+    "./eslint": "./eslint.config.js",
+    "./tsconfig.app": "./tsconfig.app.json",
+    "./tsconfig.node": "./tsconfig.node.json",
+    "./build": "./src/build.ts"
+  }
+}
+
+

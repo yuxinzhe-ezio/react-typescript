@@ -1,0 +1,91 @@
+name: Build & Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'apps/*'
+      - 'packages/*'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+  pull_request:
+    branches: [master]
+    paths:
+      - 'apps/*'
+      - 'packages/*'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+    types: [opened, synchronize]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: 22.18.0
+  BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+
+jobs:
+  build-and-deploy:
+    # 集成分支的 push 一律构建；PR 仅在带 deploy 标签时构建（精确匹配）
+    if: >-
+      github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (
+        github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy')
+      )
+    runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref_name }}
+      cancel-in-progress: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      # 设置 Node 并启用 yarn 缓存
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+          cache-dependency-path: yarn.lock
+
+      - name: Restore Yarn tarball cache
+        id: yarn_cache_restore
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.cache/yarn/v6
+          key: yarn-cache-${{ runner.os }}-${{ env.NODE_VERSION }}-${{ hashFiles('yarn.lock') }}
+
+      - name: Prepare (version + install)
+        id: prepare
+        run: |
+          npx --yes tsx .github/scripts/gen-version.ts
+          yarn install --frozen-lockfile --prefer-offline
+
+      - name: Save Yarn tarball cache (save when not restored)
+        if: ${{ steps.yarn_cache_restore.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.cache/yarn/v6
+          key: yarn-cache-${{ runner.os }}-${{ env.NODE_VERSION }}-${{ hashFiles('yarn.lock') }}
+
+      - name: Generate project list
+        id: gen
+        run: npx --yes tsx .github/scripts/list-projects.ts
+        env:
+          LAST_SHA: ${{ github.event.before || github.event.pull_request.base.sha || 'HEAD~1' }}
+          HEAD_SHA: ${{ github.sha }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+
+      - name: Build & Deploy projects sequentially
+        if: ${{ steps.gen.outputs.pairs != '' }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          LARK_WEBHOOK_URL: ${{ secrets.LARK_WEBHOOK_URL }}
+          PAIRS: ${{ steps.gen.outputs.pairs }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GITHUB_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          npx --yes tsx .github/scripts/build-and-deploy.ts
+
+      - name: No changed projects
+        if: ${{ steps.gen.outputs.pairs == '' }}
+        run: echo "No changed projects. Skipping build/deploy." | cat

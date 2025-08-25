@@ -1,26 +1,15 @@
 {
-  "name": "@react-typescript/scripts",
+  "name": "@react-typescript/config",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Node runnable TypeScript scripts for the monorepo",
-  "bin": {
-    "lint-name": "./dist/lint-name.mjs"
-  },
+  "description": "Node runnable TypeScript config for the monorepo",
   "main": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "files": [
     "dist"
   ],
   "scripts": {
-    "dev": "node --watch src/index.ts",
-    "start": "node src/index.ts",
-    "cf:update": "node src/cloudflare-pages-update.ts",
-    "lint-name": "node src/lint-name.ts",
-    "name:check": "node src/name-case.ts --mode check --dir",
-    "name:fix": "node src/name-case.ts --mode fix --dir",
-    "name:rename:1": "node src/name-case.ts --mode rename --step 1 --scope",
-    "name:rename:2": "node src/name-case.ts --mode rename --step 2 --scope",
     "build": "tsup src/index.ts --format esm --out-dir dist --dts",
     "clean": "rimraf dist",
     "type-check": "tsc --noEmit",
