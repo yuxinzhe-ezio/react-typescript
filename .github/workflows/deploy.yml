@@ -1,27 +1,26 @@
-name: Build & Deploy to Cloudflare Pages (multi-project + yarn)
+name: Build & Deploy to Cloudflare Pages
 
 on:
   push:
     branches: [master]
     paths:
-      - 'apps/**'
-      - 'packages/**'
+      - 'apps/*'
+      - 'packages/*'
       - 'pnpm-lock.yaml'
       - 'package.json'
-      - '.github/workflows/deploy-pages.yml'
   pull_request:
     branches: [master]
-    types: [opened, synchronize, reopened, labeled, unlabeled]
     paths:
-      - 'apps/**'
-      - 'packages/**'
+      - 'apps/*'
+      - 'packages/*'
       - 'pnpm-lock.yaml'
       - 'package.json'
-      - '.github/workflows/deploy-pages.yml'
+    types: [opened, synchronize]
   workflow_dispatch:
 
 env:
   NODE_VERSION: 22.18.0
+  BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
 
 jobs:
   build-and-deploy:
@@ -31,22 +30,14 @@ jobs:
         github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy')
       )
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - project: web3
-            cf: plaud-web3
-          - project: web
-            cf: plaud-web
-          - project: editor
-            cf: plaud-editor
     concurrency:
-      group: ${{ github.workflow }}-${{ github.ref_name }}-${{ matrix.project }}
+      group: ${{ github.workflow }}-${{ github.ref_name }}
       cancel-in-progress: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
       # 设置 Node 并启用 yarn 缓存
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -75,37 +66,26 @@ jobs:
           path: ~/.cache/yarn/v6
           key: yarn-cache-${{ runner.os }}-${{ env.NODE_VERSION }}-${{ hashFiles('yarn.lock') }}
 
-      - name: Build ${{ matrix.project }}
-        working-directory: ${{ matrix.project }}
-        run: yarn build
+      - name: Generate project list
+        id: gen
+        run: npx --yes tsx .github/scripts/list-projects.ts
         env:
-          OUT_DIR: dist
-          PUBLIC_PATH: ./
-          VERSION: ${{ env.VERSION }}
-          CF_PAGES_PROJECT: ${{ matrix.cf }}
+          LAST_SHA: ${{ github.event.before || github.event.pull_request.base.sha || 'HEAD~1' }}
+          HEAD_SHA: ${{ github.sha }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
 
-      # 发布并通知 Lark
-      - name: Publish to Cloudflare Pages & Notify Lark
-        id: publish
-        run: |
-          npx --yes wrangler@^3 pages deploy "${{ matrix.project }}/dist" \
-            --project-name "${{ matrix.cf }}" \
-            --branch "${{ github.ref_name }}"
-          PR_URL="${{ github.event.pull_request.html_url }}" \
-          BRANCH_NAME="${{ github.head_ref || github.ref_name }}" \
-          JOB_STATUS=success \
-          GITHUB_RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
-          CF_PAGES_PROJECT="${{ matrix.cf }}" \
-          npx --yes tsx .github/scripts/send-lark.ts --type interactive --title "${{ matrix.cf }} (${{ env.VERSION }})"
+      - name: Build & Deploy projects sequentially
+        if: ${{ steps.gen.outputs.pairs != '' }}
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           LARK_WEBHOOK_URL: ${{ secrets.LARK_WEBHOOK_URL }}
+          PAIRS: ${{ steps.gen.outputs.pairs }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GITHUB_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          npx --yes tsx .github/scripts/build-and-deploy.ts
 
-      - name: Upload dist artifact (optional)
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist-${{ matrix.cf }}
-          path: ${{ matrix.project }}/dist
-          if-no-files-found: warn
-          retention-days: 7
+      - name: No changed projects
+        if: ${{ steps.gen.outputs.pairs == '' }}
+        run: echo "No changed projects. Skipping build/deploy." | cat

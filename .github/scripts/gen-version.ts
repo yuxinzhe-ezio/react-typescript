@@ -1,5 +1,5 @@
-import { appendFileSync } from "node:fs";
-import { execSync } from "node:child_process";
+import { appendFileSync } from 'node:fs';
+import { execSync } from 'node:child_process';
 import {
   ENV_FILE_GITHUB_ENV,
   ENV_FILE_GITHUB_OUTPUT,
@@ -7,13 +7,13 @@ import {
   ENV_GITHUB_REF,
   ENV_GITHUB_REF_NAME,
   ENV_GITHUB_RUN_NUMBER,
-} from "./constants";
+} from './constants';
 
 type SemverTuple = [number, number, number];
 
 const safeExec = (command: string): string | null => {
   try {
-    const output = execSync(command, { stdio: ["ignore", "pipe", "ignore"] });
+    const output = execSync(command, { stdio: ['ignore', 'pipe', 'ignore'] });
     return output.toString().trim();
   } catch {
     return null;
@@ -21,14 +21,14 @@ const safeExec = (command: string): string | null => {
 };
 
 const fetchLatestTag = (): string => {
-  safeExec("git fetch --tags");
-  const tag = safeExec("git describe --tags --abbrev=0");
-  return tag ?? "v0.0.0";
+  safeExec('git fetch --tags');
+  const tag = safeExec('git describe --tags --abbrev=0');
+  return tag ?? 'v0.0.0';
 };
 
 const parseVersion = (tag: string): SemverTuple => {
-  const version = tag.startsWith("v") ? tag.slice(1) : tag;
-  const [majorStr, minorStr, patchStr] = version.split(".");
+  const version = tag.startsWith('v') ? tag.slice(1) : tag;
+  const [majorStr, minorStr, patchStr] = version.split('.');
   const major = Number(majorStr) || 0;
   const minor = Number(minorStr) || 0;
   const patch = Number(patchStr) || 0;
@@ -42,10 +42,21 @@ const resolveBranchName = (env: NodeJS.ProcessEnv): string => {
   const refName = env[ENV_GITHUB_REF_NAME];
   if (refName && refName.length > 0) return refName;
 
-  const ref = env[ENV_GITHUB_REF] || "";
-  if (ref.startsWith("refs/heads/")) return ref.replace("refs/heads/", "");
-  return ref || "";
+  const ref = env[ENV_GITHUB_REF] || '';
+  if (ref.startsWith('refs/heads/')) return ref.replace('refs/heads/', '');
+  return ref || '';
 };
+
+const bumpVersion = (
+  [majorIn, minorIn, patchIn]: SemverTuple,
+  branch: string,
+  runNumberRaw: string | undefined
+): { version: string; suffix: string } => {
+  const major = majorIn;
+  let minor = minorIn;
+  let patch = patchIn;
+  const runNumber = (runNumberRaw && Number(runNumberRaw)) || 0;
+  let suffix = '';
 
 const bumpVersion = (
   [majorIn, minorIn, patchIn]: SemverTuple,
@@ -68,7 +79,7 @@ const bumpVersion = (
   } else if (branch.startsWith("release/")) {
     minor += 1;
     patch = 0;
-  } else if (branch === "master" || branch === "main") {
+  } else if (branch === 'master' || branch === 'main') {
     patch += 1;
   }
 
@@ -76,7 +87,11 @@ const bumpVersion = (
   return { version, suffix };
 };
 
-const writeGithubOutputs = (envPath: string | undefined, outputPath: string | undefined, version: string): void => {
+const writeGithubOutputs = (
+  envPath: string | undefined,
+  outputPath: string | undefined,
+  version: string
+): void => {
   if (envPath && envPath.length > 0) {
     appendFileSync(envPath, `\nVERSION=${version}\n`);
   }
@@ -98,5 +113,3 @@ const main = (): void => {
 };
 
 main();
-
-
