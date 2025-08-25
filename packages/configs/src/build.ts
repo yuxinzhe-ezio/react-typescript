@@ -17,7 +17,7 @@ export type ProjectBuildConfig = {
 
 export const PROJECT_BUILD_CONFIGS: Record<string, ProjectBuildConfig> = {
   web: {
-    projectPath: './apps/web',
+    projectPath: 'apps/web',
     cloudflareProject: 'react-typescripts',
     buildDir: 'dist',
     publicPath: './',
