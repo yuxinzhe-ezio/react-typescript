@@ -5,14 +5,14 @@ import { Spin } from 'antd';
 
 import routes, { RouteConfig } from './routes';
 
-// Loading组件
+// Loading component
 const PageLoading: React.FC = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
-    <Spin size="large" />
+    <Spin size='large' />
   </div>
 );
 
-// 转换路由配置为React Router格式
+// Transform route configs to React Router format
 const transformRoutes = (routeConfigs: RouteConfig[]) => {
   return routeConfigs.map(route => ({
     path: route.path,
@@ -25,7 +25,7 @@ const transformRoutes = (routeConfigs: RouteConfig[]) => {
   }));
 };
 
-// 创建路由器实例
+// Create router instance
 const router = createBrowserRouter(transformRoutes(routes));
 
 const Router: React.FC = () => {

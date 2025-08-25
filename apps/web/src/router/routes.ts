@@ -1,13 +1,13 @@
 import { ComponentType, lazy } from 'react';
 
-// 自定义路由配置类型
+// Custom route config type
 export interface RouteConfig {
   path: string;
   element: ComponentType;
   index?: boolean;
 }
 
-// 动态导入页面组件
+// Dynamic import page components
 const Home = lazy(() => import('../pages/home'));
 
 export const routes: RouteConfig[] = [
