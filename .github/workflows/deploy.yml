@@ -4,15 +4,15 @@ on:
   push:
     branches: [master]
     paths:
-      - 'apps/*'
-      - 'packages/*'
+      - 'apps/**'
+      - 'packages/**'
       - 'pnpm-lock.yaml'
       - 'package.json'
   pull_request:
     branches: [master]
     paths:
-      - 'apps/*'
-      - 'packages/*'
+      - 'apps/**'
+      - 'packages/**'
       - 'pnpm-lock.yaml'
       - 'package.json'
     types: [opened, synchronize]
