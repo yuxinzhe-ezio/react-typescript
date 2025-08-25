@@ -12,7 +12,7 @@ const PageLoading: React.FC = () => (
   </div>
 );
 
-// 转换路由配置为React Router格式
+// Transform route configs to React Router format
 const transformRoutes = (routeConfigs: RouteConfig[]) => {
   return routeConfigs.map(route => ({
     path: route.path,
