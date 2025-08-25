@@ -25,7 +25,7 @@ const transformRoutes = (routeConfigs: RouteConfig[]) => {
   }));
 };
 
-// 创建路由器实例
+// Create router instance
 const router = createBrowserRouter(transformRoutes(routes));
 
 const Router: React.FC = () => {

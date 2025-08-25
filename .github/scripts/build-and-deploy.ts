@@ -23,6 +23,8 @@ const main = async (): Promise<void> => {
     const cfg = PROJECT_BUILD_CONFIGS[project as keyof typeof PROJECT_BUILD_CONFIGS];
     if (!cfg) continue;
 
+    const projectPath = cfg.projectPath;
+
     const merged = {
       ...(cfg.envCommon || {}),
       ...((cfg.envPerEnv && (cfg.envPerEnv as Record<string, Record<string, string>>)[envName]) ||
@@ -39,7 +41,7 @@ const main = async (): Promise<void> => {
 
     // Build
     run('pnpm build', {
-      cwd: project,
+      cwd: projectPath,
       env: {
         VERSION: process.env.VERSION || '',
         CF_PAGES_PROJECT: cf,
@@ -50,7 +52,7 @@ const main = async (): Promise<void> => {
     // Deploy via wrangler CLI
     const outDir = merged.OUT_DIR || 'dist';
     run(
-      `npx --yes wrangler@^3 pages deploy "${project}/${outDir}" --project-name "${cf}" --branch "${branchName}"`
+      `npx --yes wrangler@^3 pages deploy "${projectPath}/${outDir}" --project-name "${cf}" --branch "${branchName}"`
     );
 
     // Notify Lark directly via function
