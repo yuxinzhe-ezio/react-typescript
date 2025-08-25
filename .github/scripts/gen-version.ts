@@ -58,25 +58,14 @@ const bumpVersion = (
   const runNumber = (runNumberRaw && Number(runNumberRaw)) || 0;
   let suffix = '';
 
-const bumpVersion = (
-  [majorIn, minorIn, patchIn]: SemverTuple,
-  branch: string,
-  runNumberRaw: string | undefined
-): { version: string; suffix: string } => {
-  let major = majorIn;
-  let minor = minorIn;
-  let patch = patchIn;
-  const runNumber = (runNumberRaw && Number(runNumberRaw)) || 0;
-  let suffix = "";
-
-  if (branch.startsWith("feature/")) {
+  if (branch.startsWith('feature/')) {
     minor += 1;
     patch = 0;
     suffix = `-alpha.${runNumber}`;
-  } else if (branch.startsWith("hotfix/")) {
+  } else if (branch.startsWith('hotfix/')) {
     patch += 1;
     suffix = `-hotfix.${runNumber}`;
-  } else if (branch.startsWith("release/")) {
+  } else if (branch.startsWith('release/')) {
     minor += 1;
     patch = 0;
   } else if (branch === 'master' || branch === 'main') {
