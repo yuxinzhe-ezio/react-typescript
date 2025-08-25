@@ -1,13 +1,13 @@
 {
-  "name": "web",
+  "name": "web2",
   "version": "0.0.1",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "rsbuild dev",
     "build": "rsbuild build",
-    "lint": "cd ../.. && pnpm eslint apps/web/src",
-    "lint:fix": "cd ../.. && pnpm eslint apps/web/src --fix"
+    "lint": "cd ../.. && pnpm eslint apps/web2/src",
+    "lint:fix": "cd ../.. && pnpm eslint apps/web2/src --fix"
   },
   "dependencies": {
     "antd": "5.26.7",
