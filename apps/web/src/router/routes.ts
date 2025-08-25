@@ -7,7 +7,7 @@ export interface RouteConfig {
   index?: boolean;
 }
 
-// 动态导入页面组件
+// Dynamic import page components
 const Home = lazy(() => import('../pages/home'));
 
 export const routes: RouteConfig[] = [
