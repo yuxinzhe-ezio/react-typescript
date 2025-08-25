@@ -2,7 +2,8 @@ import { appendFileSync } from 'node:fs';
 import { PROJECT_BUILD_CONFIGS } from '../../packages/configs/src/build';
 import { execSync } from 'node:child_process';
 
-const all = Object.values(PROJECT_BUILD_CONFIGS).map(cfg => ({
+const all = Object.entries(PROJECT_BUILD_CONFIGS).map(([key, cfg]) => ({
+  key: key,
   project: cfg.projectPath,
   cf: cfg.cloudflareProject,
 }));
@@ -63,9 +64,9 @@ const include = changed.length
   ? all.filter(({ project }) => changed.some(f => f.startsWith(`${project}/`)))
   : [];
 
-console.log(`Projects with changes: ${include.map(i => i.project).join(', ') || 'none'}`);
+console.log(`Projects with changes: ${include.map(i => i.key).join(', ') || 'none'}`);
 
-const pairs = include.map(i => `${i.project},${i.cf}`).join('|');
+const pairs = include.map(i => `${i.key},${i.cf}`).join('|');
 const pairsLine = `pairs=${pairs.replace(/%/g, '%25').replace(/\n/g, '%0A').replace(/\r/g, '%0D')}`;
 if (process.env.GITHUB_OUTPUT) {
   appendFileSync(process.env.GITHUB_OUTPUT, `\n${pairsLine}\n`);

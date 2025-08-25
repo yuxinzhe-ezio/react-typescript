@@ -1,6 +1,6 @@
 import { ComponentType, lazy } from 'react';
 
-// 自定义路由配置类型
+// Custom route config type
 export interface RouteConfig {
   path: string;
   element: ComponentType;
