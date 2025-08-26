@@ -16,7 +16,7 @@ declare module '*.png' {
   export default src;
 }
 
-// CSS Modules 类型声明
+// CSS Modules types
 declare module '*.module.scss' {
   const classes: { readonly [key: string]: string };
   export default classes;
