@@ -9,7 +9,7 @@ const { Title, Paragraph } = Typography;
 const Home: React.FC = () => {
   return (
     <div className={styles.container}>
-      <Title level={1}>Welcome to React + TypeScript + Ant Design（V2）</Title>
+      <Title level={1}>Welcome to React + TypeScript + Ant Design V2</Title>
       <Paragraph>Current Version: {__VERSION__}</Paragraph>
       <Paragraph>This is a React 18 application with Ant Design 5.x integration.</Paragraph>
 
