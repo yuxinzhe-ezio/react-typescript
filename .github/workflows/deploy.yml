@@ -17,6 +17,15 @@ on:
       - 'package.json'
     types: [opened, synchronize]
   workflow_dispatch:
+    inputs:
+      region:
+        description: 'Region'
+        required: true
+        default: 'global'
+      mode:
+        description: 'Mode'
+        required: true
+        default: 'manual'
 
 env:
   NODE_VERSION: 22.18.0
@@ -24,11 +33,11 @@ env:
 
 jobs:
   build-and-deploy:
-    # 集成分支的 push 一律构建；PR 仅在带 deploy 标签时构建（精确匹配）
+    # 集成分支的 push 一律构建；PR 仅在带 deploy 标签时构建（精确匹配）；飞书手动触发直接执行
     if: >-
-      github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (
-        github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy')
-      )
+      github.event_name == 'push' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy'))
     runs-on: ubuntu-latest
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref_name }}
