@@ -1,5 +1,7 @@
 import * as Lark from '@larksuiteoapi/node-sdk';
 
+import { createDeployFormCard } from '../../utils/lark/cards';
+
 // Simple rate limiting to prevent duplicate messages
 const lastRequestTimes = new Map<string, number>();
 const RATE_LIMIT_WINDOW = 5000; // 5 seconds
@@ -23,16 +25,7 @@ type BotMenuEvent = {
   [key: string]: unknown;
 };
 
-// Deploy card template
-const createDeployFormCard = () => {
-  return {
-    type: 'template',
-    data: {
-      template_id: 'AAq9cRMvtFbM0',
-      template_variable: {},
-    },
-  };
-};
+// Deploy card is now created by utils/lark/card.ts
 
 export const onBotMenu = (client: Lark.Client) => {
   return async (data: unknown) => {
@@ -52,14 +45,14 @@ export const onBotMenu = (client: Lark.Client) => {
 
       lastRequestTimes.set(lastRequestKey, now);
 
-      // Send deploy card template
+      // Send deploy card using custom builder
       try {
         const cardData = createDeployFormCard();
         await client.im.v1.message.create({
           params: { receive_id_type: 'open_id' },
           data: {
             receive_id: openId,
-            content: JSON.stringify(cardData),
+            content: JSON.stringify(cardData.card.data),
             msg_type: 'interactive',
           },
         });

@@ -54,7 +54,7 @@ importers:
         specifier: 8.39.0
         version: 8.39.0(eslint@9.32.0(jiti@2.5.1))(typescript@5.9.2)
 
-  apps/lark-service:
+  apps/node-service:
     dependencies:
       '@larksuiteoapi/node-sdk':
         specifier: 1.55.0

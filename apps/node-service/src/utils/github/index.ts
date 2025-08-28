@@ -30,7 +30,7 @@ export const handleGitHubDeployment = async (
   let prInfo: GitHubPRInfo | undefined;
 
   try {
-    // Step 1: 检查是否存在PR
+    // Step 1: Check if PR exists
     const existingPR = await checkPullRequest(formData.branch_name!);
 
     if (existingPR) {
@@ -41,7 +41,7 @@ export const handleGitHubDeployment = async (
         created: false,
       };
     } else {
-      // Step 2: 创建新PR
+      // Step 2: Create new PR
       console.log(`🆕 Creating new PR for branch: ${formData.branch_name}`);
       const newPR = await createPullRequest(formData.branch_name!);
 
@@ -57,7 +57,7 @@ export const handleGitHubDeployment = async (
       }
     }
 
-    // Step 3: 触发GitHub Actions
+    // Step 3: Trigger GitHub Actions
     const result = await triggerGitHubAction(formData, prInfo?.number);
     console.log('🎯 GitHub deployment result:', result.success ? 'SUCCESS' : 'FAILED');
 

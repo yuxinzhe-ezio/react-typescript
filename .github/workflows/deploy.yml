@@ -33,7 +33,7 @@ env:
 
 jobs:
   build-and-deploy:
-    # 集成分支的 push 一律构建；PR 仅在带 deploy 标签时构建（精确匹配）；飞书手动触发直接执行
+    # 集成分支的 push 一律构建；PR 仅在带 deploy 标签时构建（精确匹配）；workflow_dispatch 直接执行
     if: >-
       github.event_name == 'push' ||
       github.event_name == 'workflow_dispatch' ||

@@ -46,8 +46,8 @@ export const createPullRequest = async (branchName: string): Promise<any | null>
         headers: GITHUB_API_HEADERS,
         body: JSON.stringify({
           title: `Auto Deploy: ${branchName}`,
-          head: branchName, // 源分支
-          base: 'master', // 使用master分支
+          head: branchName, // Source branch
+          base: 'master', // Use master branch
           body: `Automated deployment PR created from Lark Bot\n\n**Branch:** ${branchName}\n**Triggered by:** Lark Bot`,
           draft: false,
         }),

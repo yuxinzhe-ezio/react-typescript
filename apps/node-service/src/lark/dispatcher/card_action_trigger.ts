@@ -1,6 +1,8 @@
 import * as Lark from '@larksuiteoapi/node-sdk';
 
-import { type GitHubPRInfo, handleGitHubDeployment } from '../../utils/github';
+import { createFailureCard, createProcessingCard, createSuccessCard } from '../../utils/lark/cards';
+// import { type GitHubPRInfo } from '../../utils/github';
+// import { handleGitHubDeployment } from '../../utils/github';
 
 // Form data structure from Lark card
 type LarkFormData = {
@@ -21,99 +23,24 @@ type CardActionEvent = {
     name?: string;
     value?: string;
     form_data?: LarkFormData;
-    form_value?: LarkFormData; // 实际数据来源
+    form_value?: LarkFormData; // Actual data source
   };
   form?: LarkFormData;
+  context?: {
+    open_message_id?: string;
+    open_chat_id?: string;
+  };
   message_id?: string;
   [key: string]: unknown;
 };
 
-// Create status card
-const createStatusCard = (
-  formData: LarkFormData,
-  status: 'success' | 'failure',
-  actionUrl?: string,
-  error?: string,
-  prInfo?: GitHubPRInfo
-) => {
-  const statusEmoji = status === 'success' ? '✅' : '❌';
-  const statusText = status === 'success' ? '部署已触发' : '部署失败';
-
-  let content = `${statusEmoji} **${statusText}**\n\n`;
-  content += `**分支：** ${formData.branch_name}\n`;
-  content += `**部署区域：** ${formData.region === 'global' ? 'Global' : 'China'}\n`;
-  content += `**部署模式：** ${formData.trigger === 'auto' ? '自动部署' : '手动部署'}\n`;
-
-  if (prInfo) {
-    content += `\n**PR状态：** ${prInfo.created ? '新建' : '已存在'} #${prInfo.number}`;
-  }
-
-  const buttons = [];
-
-  if (actionUrl) {
-    buttons.push({
-      tag: 'button',
-      text: {
-        tag: 'plain_text',
-        content: '查看Actions',
-      },
-      type: 'primary',
-      url: actionUrl,
-    });
-  }
-
-  if (prInfo) {
-    buttons.push({
-      tag: 'button',
-      text: {
-        tag: 'plain_text',
-        content: '查看PR',
-      },
-      type: 'default',
-      url: prInfo.html_url,
-    });
-  }
-
-  return {
-    msg_type: 'interactive',
-    card: {
-      elements: [
-        {
-          tag: 'div',
-          text: {
-            tag: 'lark_md',
-            content,
-          },
-        },
-        ...(buttons.length > 0
-          ? [
-              {
-                tag: 'action',
-                actions: buttons,
-              },
-            ]
-          : []),
-        ...(error
-          ? [
-              {
-                tag: 'div',
-                text: {
-                  tag: 'lark_md',
-                  content: `**错误信息：** ${error}`,
-                },
-              },
-            ]
-          : []),
-      ],
-    },
-  };
-};
+// Status card creation is now handled by utils/lark/card.ts
 
 // Extract form data directly from Lark card form
 const extractFormData = (payload: CardActionEvent): LarkFormData => {
   // Extract from different possible sources
   const actionData = payload.action;
-  const formValue = actionData?.form_value; // 实际数据在这里
+  const formValue = actionData?.form_value; // Actual data is here
   const formData = actionData?.form_data || payload.form;
 
   console.log('🔍 Action data:', actionData);
@@ -134,68 +61,113 @@ const extractFormData = (payload: CardActionEvent): LarkFormData => {
   return { branch_name, region, trigger };
 };
 
-export const onCardActionTrigger = (client: Lark.Client) => {
+export const onCardActionTrigger = (_client: Lark.Client) => {
   return async (data: unknown) => {
     console.log('🎯 Card action trigger received!');
     console.log('🔍 Full data:', JSON.stringify(data, null, 2));
 
     const payload = data as CardActionEvent;
-    console.log('📝 Event type: card.action.trigger_v1');
+    console.log('📝 Event type: card.action.trigger');
     console.log('📝 Action:', payload.action);
 
     // Extract and map form data
     const formData = extractFormData(payload);
     console.log('📊 Extracted form data:', formData);
 
-    try {
-      console.log(`📍 Deploy settings - Region: ${formData.region}, Trigger: ${formData.trigger}`);
+    // Get message_id for card update (prioritize context)
+    const messageId = payload.context?.open_message_id || payload.message_id;
+    console.log('🆔 Message ID:', messageId);
 
-      // 使用简化的GitHub部署处理
-      const { result, prInfo } = await handleGitHubDeployment(formData);
+    // According to official docs: create processing status card for sync return
+    const processingCard = createProcessingCard(formData);
+    console.log('✅ Preparing processing status for immediate response');
 
-      // 发送响应结果
-      const openId = payload.operator?.operator_id?.open_id;
-      if (openId) {
-        const statusCard = result.success
-          ? createStatusCard(formData, 'success', result.actionUrl, undefined, prInfo)
-          : createStatusCard(formData, 'failure', undefined, result.error, prInfo);
+    // Simple setTimeout mock for testing
+    setTimeout(async () => {
+      try {
+        // Random success/failure
+        const isSuccess = Math.random() > 0.3; // 70% success rate
 
-        await client.im.v1.message.create({
-          params: { receive_id_type: 'open_id' },
-          data: {
-            receive_id: openId,
-            content: JSON.stringify(statusCard),
-            msg_type: 'interactive',
-          },
-        });
-        console.log('✅ Deploy result sent');
-      }
-    } catch (error) {
-      console.error('❌ Error in deployment process:', error);
+        console.log(`🎲 Mock result: ${isSuccess ? 'SUCCESS' : 'FAILURE'}`);
 
-      // Send error response
-      const openId = payload.operator?.operator_id?.open_id;
-      if (openId) {
-        try {
-          const errorCard = createStatusCard(
-            formData,
-            'failure',
-            undefined,
-            `部署流程出错: ${String(error)}`
-          );
+        if (messageId) {
+          const statusCard = isSuccess
+            ? createSuccessCard(formData)
+            : createFailureCard(formData, 'Mock deployment failed');
 
-          await client.im.v1.message.create({
-            params: { receive_id_type: 'open_id' },
-            data: {
-              receive_id: openId,
-              content: JSON.stringify(errorCard),
-              msg_type: 'interactive',
-            },
+          await _client.im.v1.message.patch({
+            path: { message_id: messageId },
+            data: { content: JSON.stringify(statusCard.card.data) },
           });
-        } catch (sendError) {
-          console.error('❌ Failed to send error message:', sendError);
+          console.log(`✅ Card updated with ${isSuccess ? 'SUCCESS' : 'FAILURE'} result`);
         }
+      } catch (error) {
+        console.error('❌ Error in mock process:', error);
       }
-    }
+    }, 1000);
+
+    // Original GitHub operations handling (commented for testing)
+    //     setImmediate(async () => {
+    //       try {
+    //         console.log(
+    //           `📍 Deploy settings - Region: ${formData.region}, Trigger: ${formData.trigger}`
+    //         );
+    //
+    //         // Use simplified GitHub deployment handling
+    //         const { result, prInfo } = await handleGitHubDeployment(formData);
+    //
+    //         // Async update card to final status
+    //         if (messageId) {
+    //           const statusCard = result.success
+    //             ? createStatusCard(formData, 'success', result.actionUrl, undefined, prInfo)
+    //             : createStatusCard(formData, 'failure', undefined, result.error, prInfo);
+    //
+    //           await _client.im.v1.message.patch({
+    //             path: {
+    //               message_id: messageId,
+    //             },
+    //             data: {
+    //               content: JSON.stringify(statusCard),
+    //             },
+    //           });
+    //           console.log('✅ Card updated with deploy result');
+    //         } else {
+    //           console.error('❌ No message_id found, cannot update card');
+    //         }
+    //       } catch (error) {
+    //         console.error('❌ Error in deployment process:', error);
+    //
+    //         // Update card to error status
+    //         if (messageId) {
+    //           try {
+    //             const errorCard = createStatusCard(
+    //               formData,
+    //               'failure',
+    //               undefined,
+    //               `Deployment process failed: ${String(error)}`
+    //             );
+    //
+    //             await _client.im.v1.message.patch({
+    //               path: {
+    //                 message_id: messageId,
+    //               },
+    //               data: {
+    //                 content: JSON.stringify(errorCard),
+    //               },
+    //             });
+    //             console.log('✅ Card updated with error status');
+    //           } catch (updateError) {
+    //             console.error('❌ Failed to update card with error:', updateError);
+    //           }
+    //         } else {
+    //           console.error('❌ No message_id found, cannot update card with error');
+    //         }
+    //       }
+    //     });
+
+    // According to official docs: sync return processing status card
+    // Ensure return v2 format card (includes config)
+    console.log('special log 📔📔📔📔📔📔', processingCard);
+    return processingCard;
   };
 };
