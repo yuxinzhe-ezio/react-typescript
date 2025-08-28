@@ -23,7 +23,8 @@ import type { FormData, GitHubActionResult, GitHubPRInfo } from './types';
  * 完整的GitHub部署流程：检查/创建PR + 触发Actions
  */
 export const handleGitHubDeployment = async (
-  formData: FormData
+  formData: FormData,
+  messageId?: string
 ): Promise<{ result: GitHubActionResult; prInfo?: GitHubPRInfo }> => {
   console.log('🏗️ Starting GitHub deployment process...');
 
@@ -58,7 +59,7 @@ export const handleGitHubDeployment = async (
     }
 
     // Step 3: Trigger GitHub Actions
-    const result = await triggerGitHubAction(formData, prInfo?.number);
+    const result = await triggerGitHubAction(formData, messageId, prInfo?.number);
     console.log('🎯 GitHub deployment result:', result.success ? 'SUCCESS' : 'FAILED');
 
     return { result, prInfo };

@@ -9,6 +9,10 @@ export interface FormData {
   branch_name?: string;
   region?: string;
   trigger?: string;
+  project_name?: string;
+  version?: string;
+  preview_url?: string;
+  alias_url?: string;
 }
 
 export interface PRInfo {
@@ -28,13 +32,33 @@ export const createSuccessCard = (
   const builder = new LarkCardBuilder();
 
   // Build content
-  let content = `✅ **Deployment Triggered**\n\n`;
+  let content = `✅ **Deployment Success**\n\n`;
+
+  if (formData.project_name) {
+    content += `**Project:** ${formData.project_name}\n`;
+  }
+
+  if (formData.version) {
+    content += `**Version:** ${formData.version}\n`;
+  }
+
   content += `**Branch:** ${formData.branch_name}\n`;
   content += `**Region:** ${formData.region === 'global' ? 'Global' : 'China'}\n`;
   content += `**Mode:** ${formData.trigger === 'auto' ? 'Auto Deploy' : 'Manual Deploy'}\n`;
 
   if (prInfo) {
     content += `\n**PR Status:** ${prInfo.created ? 'Created' : 'Existing'} #${prInfo.number}`;
+  }
+
+  // Add deployment URLs if available
+  if (formData.preview_url || formData.alias_url) {
+    content += `\n\n**🔗 URLs:**\n`;
+    if (formData.preview_url) {
+      content += `**Preview URL:** [${formData.preview_url}](${formData.preview_url})\n`;
+    }
+    if (formData.alias_url) {
+      content += `**Alias URL:** [${formData.alias_url}](${formData.alias_url})\n`;
+    }
   }
 
   // Set up basic card

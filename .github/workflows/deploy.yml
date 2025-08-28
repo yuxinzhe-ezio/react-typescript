@@ -26,6 +26,9 @@ on:
         description: 'Mode'
         required: true
         default: 'manual'
+      message_id:
+        description: 'Lark Message ID for callback'
+        required: false
 
 env:
   NODE_VERSION: 22.18.0
@@ -87,9 +90,13 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           LARK_WEBHOOK_URL: ${{ secrets.LARK_WEBHOOK_URL }}
+          LARK_CALLBACK_URL: ${{ vars.LARK_CALLBACK_URL }}
           PAIRS: ${{ steps.gen.outputs.pairs }}
           PR_URL: ${{ github.event.pull_request.html_url }}
           GITHUB_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          REGION: ${{ github.event.inputs.region || 'global' }}
+          MODE: ${{ github.event.inputs.mode || 'manual' }}
+          MESSAGE_ID: ${{ github.event.inputs.message_id }}
         run: |
           npx --yes tsx .github/scripts/build-and-deploy.ts
 

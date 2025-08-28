@@ -8,7 +8,7 @@ export const checkPullRequest = async (branchName: string): Promise<any | null> 
     console.log(`🔍 Checking PRs for branch: ${branchName}`);
 
     const response = await fetch(
-      `${GITHUB_API_BASE_URL}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/pulls?head=${GITHUB_OWNER}:${branchName}&state=open&base=master`,
+      `${GITHUB_API_BASE_URL}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/pulls?head=${branchName}&state=open&base=master`,
       {
         headers: {
           Authorization: GITHUB_API_HEADERS.Authorization,
@@ -46,7 +46,7 @@ export const createPullRequest = async (branchName: string): Promise<any | null>
         headers: GITHUB_API_HEADERS,
         body: JSON.stringify({
           title: `Auto Deploy: ${branchName}`,
-          head: branchName, // Source branch
+          head: branchName, // Source branch (same repo, no need for owner prefix)
           base: 'master', // Use master branch
           body: `Automated deployment PR created from Lark Bot\n\n**Branch:** ${branchName}\n**Triggered by:** Lark Bot`,
           draft: false,

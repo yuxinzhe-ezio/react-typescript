@@ -2,10 +2,73 @@ import { execSync } from 'node:child_process';
 import { appendFileSync } from 'node:fs';
 import { PROJECT_BUILD_CONFIGS } from '../../packages/configs/src/build';
 import { pickDeployEnv } from './env';
-import { sendInteractive, buildDefaultText } from './send-lark';
+import { sendInteractive, buildDefaultText, getEnv } from './send-lark';
 
 const run = (cmd: string, opts: { cwd?: string; env?: NodeJS.ProcessEnv } = {}): void => {
   execSync(cmd, { stdio: 'inherit', cwd: opts.cwd, env: { ...process.env, ...(opts.env || {}) } });
+};
+
+// Deployment notification payload
+interface DeploymentNotification {
+  status: 'success' | 'failure';
+  projectName: string;
+  version: string;
+  branchName: string;
+  region: string;
+  trigger: string;
+  messageId?: string;
+  errorMessage?: string;
+}
+
+// Notify deployment result via both webhook and callback
+const notifyDeploymentResult = async (notification: DeploymentNotification): Promise<void> => {
+  const { status, projectName, version, branchName, region, trigger, messageId, errorMessage } =
+    notification;
+
+  // Send webhook notification (existing send-lark logic)
+  const webhook = process.env.LARK_WEBHOOK_URL;
+  if (webhook) {
+    process.env.JOB_STATUS = status;
+    process.env.CF_PAGES_PROJECT = projectName;
+    process.env.BRANCH_NAME = branchName;
+    const title = `${projectName} (${version})`;
+    const text =
+      status === 'failure' && errorMessage
+        ? `${buildDefaultText()}\n\n**Error:** ${errorMessage}`
+        : buildDefaultText();
+
+    await sendInteractive(webhook, title, text);
+  }
+
+  // Send callback notification to node-service (if messageId exists)
+  if (messageId) {
+    const callbackUrl = process.env.LARK_CALLBACK_URL;
+    if (callbackUrl) {
+      try {
+        const response = await fetch(`${callbackUrl}/lark/callback/update-deployment-status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message_id: messageId,
+            status,
+            branch_name: branchName,
+            region,
+            trigger,
+            project_name: projectName,
+            version,
+            action_url: process.env.GITHUB_RUN_URL,
+            ...(errorMessage && { error_message: errorMessage }),
+          }),
+        });
+
+        if (!response.ok) {
+          console.warn(`Failed to send callback: ${response.status}`);
+        }
+      } catch (error) {
+        console.warn(`Callback error:`, error);
+      }
+    }
+  }
 };
 
 const main = async (): Promise<void> => {
@@ -56,16 +119,33 @@ const main = async (): Promise<void> => {
     );
 
     // Notify Lark directly via function
-    const webhook = process.env.LARK_WEBHOOK_URL;
-    if (webhook) {
-      process.env.JOB_STATUS = 'success';
-      process.env.CF_PAGES_PROJECT = cf;
-      await sendInteractive(webhook, `${cf} (${process.env.VERSION || ''})`, buildDefaultText());
-    }
+    await notifyDeploymentResult({
+      status: 'success',
+      projectName: cf,
+      version: process.env.VERSION || '',
+      branchName: process.env.BRANCH_NAME || '',
+      region: process.env.REGION || 'global',
+      trigger: process.env.MODE || 'auto',
+      messageId: process.env.MESSAGE_ID,
+    });
   }
 };
 
-main().catch(err => {
-  process.stderr.write(String(err?.stack || err) + '\n');
+main().catch(async err => {
+  const errorMessage = String(err?.stack || err);
+  process.stderr.write(errorMessage + '\n');
+
+  // Notify deployment failure
+  await notifyDeploymentResult({
+    status: 'failure',
+    projectName: process.env.CF_PAGES_PROJECT || 'Unknown',
+    version: process.env.VERSION || '',
+    branchName: process.env.BRANCH_NAME || '',
+    region: process.env.REGION || 'global',
+    trigger: process.env.MODE || 'auto',
+    messageId: process.env.MESSAGE_ID,
+    errorMessage,
+  });
+
   process.exit(1);
 });

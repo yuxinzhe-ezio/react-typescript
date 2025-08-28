@@ -1,8 +1,7 @@
 import * as Lark from '@larksuiteoapi/node-sdk';
 
+import { handleGitHubDeployment } from '../../utils/github';
 import { createFailureCard, createProcessingCard, createSuccessCard } from '../../utils/lark/cards';
-// import { type GitHubPRInfo } from '../../utils/github';
-// import { handleGitHubDeployment } from '../../utils/github';
 
 // Form data structure from Lark card
 type LarkFormData = {
@@ -82,92 +81,69 @@ export const onCardActionTrigger = (_client: Lark.Client) => {
     const processingCard = createProcessingCard(formData);
     console.log('✅ Preparing processing status for immediate response');
 
-    // Simple setTimeout mock for testing
-    setTimeout(async () => {
+    // Real GitHub deployment handling
+    setImmediate(async () => {
       try {
-        // Random success/failure
-        const isSuccess = Math.random() > 0.3; // 70% success rate
+        console.log(
+          `📍 Deploy settings - Region: ${formData.region}, Trigger: ${formData.trigger}`
+        );
 
-        console.log(`🎲 Mock result: ${isSuccess ? 'SUCCESS' : 'FAILURE'}`);
+        // Use GitHub deployment handling with message ID for callback
+        const { result, prInfo } = await handleGitHubDeployment(formData, messageId);
 
+        // Async update card to final status
         if (messageId) {
-          const statusCard = isSuccess
-            ? createSuccessCard(formData)
-            : createFailureCard(formData, 'Mock deployment failed');
+          const statusCard = result.success
+            ? createSuccessCard(formData, result.actionUrl, prInfo)
+            : createFailureCard(formData, result.error || 'Deployment failed', result.actionUrl);
 
           await _client.im.v1.message.patch({
-            path: { message_id: messageId },
-            data: { content: JSON.stringify(statusCard.card.data) },
+            path: {
+              message_id: messageId,
+            },
+            data: {
+              content: JSON.stringify(statusCard.card.data),
+            },
           });
-          console.log(`✅ Card updated with ${isSuccess ? 'SUCCESS' : 'FAILURE'} result`);
+          console.log(
+            `✅ Card updated with deploy result: ${result.success ? 'SUCCESS' : 'FAILURE'}`
+          );
+        } else {
+          console.error('❌ No message_id found, cannot update card');
         }
       } catch (error) {
-        console.error('❌ Error in mock process:', error);
-      }
-    }, 1000);
+        console.error('❌ Error in deployment process:', error);
 
-    // Original GitHub operations handling (commented for testing)
-    //     setImmediate(async () => {
-    //       try {
-    //         console.log(
-    //           `📍 Deploy settings - Region: ${formData.region}, Trigger: ${formData.trigger}`
-    //         );
-    //
-    //         // Use simplified GitHub deployment handling
-    //         const { result, prInfo } = await handleGitHubDeployment(formData);
-    //
-    //         // Async update card to final status
-    //         if (messageId) {
-    //           const statusCard = result.success
-    //             ? createStatusCard(formData, 'success', result.actionUrl, undefined, prInfo)
-    //             : createStatusCard(formData, 'failure', undefined, result.error, prInfo);
-    //
-    //           await _client.im.v1.message.patch({
-    //             path: {
-    //               message_id: messageId,
-    //             },
-    //             data: {
-    //               content: JSON.stringify(statusCard),
-    //             },
-    //           });
-    //           console.log('✅ Card updated with deploy result');
-    //         } else {
-    //           console.error('❌ No message_id found, cannot update card');
-    //         }
-    //       } catch (error) {
-    //         console.error('❌ Error in deployment process:', error);
-    //
-    //         // Update card to error status
-    //         if (messageId) {
-    //           try {
-    //             const errorCard = createStatusCard(
-    //               formData,
-    //               'failure',
-    //               undefined,
-    //               `Deployment process failed: ${String(error)}`
-    //             );
-    //
-    //             await _client.im.v1.message.patch({
-    //               path: {
-    //                 message_id: messageId,
-    //               },
-    //               data: {
-    //                 content: JSON.stringify(errorCard),
-    //               },
-    //             });
-    //             console.log('✅ Card updated with error status');
-    //           } catch (updateError) {
-    //             console.error('❌ Failed to update card with error:', updateError);
-    //           }
-    //         } else {
-    //           console.error('❌ No message_id found, cannot update card with error');
-    //         }
-    //       }
-    //     });
+        // Update card to error status
+        if (messageId) {
+          try {
+            const errorCard = createFailureCard(
+              formData,
+              `Deployment process failed: ${String(error)}`,
+              undefined
+            );
+
+            await _client.im.v1.message.patch({
+              path: {
+                message_id: messageId,
+              },
+              data: {
+                content: JSON.stringify(errorCard.card.data),
+              },
+            });
+            console.log('✅ Card updated with error status');
+          } catch (updateError) {
+            console.error('❌ Failed to update card with error:', updateError);
+          }
+        } else {
+          console.error('❌ No message_id found, cannot update card with error');
+        }
+      }
+    });
 
     // According to official docs: sync return processing status card
     // Ensure return v2 format card (includes config)
-    console.log('special log 📔📔📔📔📔📔', processingCard);
+    console.log('📔 Returning processing card:', processingCard);
     return processingCard;
   };
 };

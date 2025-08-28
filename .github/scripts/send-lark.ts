@@ -40,7 +40,7 @@ const parseArgs = (argv: string[]): CliArgs => {
   return args;
 };
 
-const getEnv = (name: string): string | undefined => {
+export const getEnv = (name: string): string | undefined => {
   const value = process.env[name];
   return value && value.length > 0 ? value : undefined;
 };

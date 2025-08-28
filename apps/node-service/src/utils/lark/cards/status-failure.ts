@@ -9,6 +9,10 @@ export interface FormData {
   branch_name?: string;
   region?: string;
   trigger?: string;
+  project_name?: string;
+  version?: string;
+  preview_url?: string;
+  alias_url?: string;
 }
 
 export interface PRInfo {
@@ -30,8 +34,17 @@ export const createFailureCard = (
 
   // Build basic content
   let content = `❌ **Deployment Failed**\n\n`;
+
+  if (formData.project_name) {
+    content += `**Project:** ${formData.project_name}\n`;
+  }
+
+  if (formData.version) {
+    content += `**Version:** ${formData.version}\n`;
+  }
+
   content += `**Branch:** ${formData.branch_name}\n`;
-  content += `**Region:** ${formData.region === 'global' ? 'Global' : 'China'}\n`;
+  content += `**Region:** ${formData.region}\n`;
   content += `**Mode:** ${formData.trigger === 'auto' ? 'Auto Deploy' : 'Manual Deploy'}\n`;
 
   if (prInfo) {
