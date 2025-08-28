@@ -94,7 +94,7 @@ const handleNoChanges = async (): Promise<void> => {
   try {
     console.log('📬 Notifying Lark: No changed projects');
     const response = await fetch(
-      'http://10.1.167.43:31017/lark/callback/update-deployment-status',
+      'https://hobbies-minus-interviews-seconds.trycloudflare.com/lark/callback/update-deployment-status',
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
