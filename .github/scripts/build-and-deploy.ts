@@ -1,8 +1,7 @@
 import { execSync } from 'node:child_process';
 import { appendFileSync } from 'node:fs';
 import { PROJECT_BUILD_CONFIGS } from '../../packages/configs/src/build';
-import { pickDeployEnv } from './env';
-import { sendInteractive, buildDefaultText, getEnv } from './send-lark';
+import { pickDeployEnv, getEnv } from './env';
 
 const run = (cmd: string, opts: { cwd?: string; env?: NodeJS.ProcessEnv } = {}): void => {
   execSync(cmd, { stdio: 'inherit', cwd: opts.cwd, env: { ...process.env, ...(opts.env || {}) } });
@@ -16,13 +15,13 @@ interface DeploymentNotification {
   branchName: string;
   region: string;
   trigger: string;
-  messageId?: string;
+  openMessageId?: string;
   errorMessage?: string;
 }
 
 // Notify deployment result via both webhook and callback
 const notifyDeploymentResult = async (notification: DeploymentNotification): Promise<void> => {
-  const { status, projectName, version, branchName, region, trigger, messageId, errorMessage } =
+  const { status, projectName, version, branchName, region, trigger, openMessageId, errorMessage } =
     notification;
 
   // Get Cloudflare URLs for deployment
@@ -52,31 +51,16 @@ const notifyDeploymentResult = async (notification: DeploymentNotification): Pro
     console.warn('Failed to fetch Cloudflare deployment URLs:', error);
   }
 
-  // Send webhook notification (existing send-lark logic)
-  const webhook = process.env.LARK_WEBHOOK_URL;
-  if (webhook) {
-    process.env.JOB_STATUS = status;
-    process.env.CF_PAGES_PROJECT = projectName;
-    process.env.BRANCH_NAME = branchName;
-    const title = `${projectName} (${version})`;
-    const text =
-      status === 'failure' && errorMessage
-        ? `${buildDefaultText()}\n\n**Error:** ${errorMessage}`
-        : buildDefaultText();
-
-    await sendInteractive(webhook, title, text);
-  }
-
-  // Send callback notification to node-service (if messageId exists)
-  if (messageId) {
+  // Send callback notification to node-service (if openMessageId exists)
+  if (openMessageId) {
     try {
       const response = await fetch(
-        'http://localhost:31017/lark/callback/update-deployment-status',
+        'http://10.1.167.43:31017/lark/callback/update-deployment-status',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            message_id: messageId,
+            open_message_id: openMessageId,
             status,
             branch_name: branchName,
             region,
@@ -157,7 +141,7 @@ const main = async (): Promise<void> => {
       branchName: process.env.BRANCH_NAME || '',
       region: process.env.REGION || '',
       trigger: process.env.MODE || '',
-      messageId: process.env.MESSAGE_ID,
+      openMessageId: process.env.OPEN_MESSAGE_ID,
     });
   }
 };
@@ -174,7 +158,7 @@ main().catch(async err => {
     branchName: process.env.BRANCH_NAME || '',
     region: process.env.REGION || '',
     trigger: process.env.MODE || '',
-    messageId: process.env.MESSAGE_ID,
+    openMessageId: process.env.OPEN_MESSAGE_ID,
     errorMessage,
   });
 

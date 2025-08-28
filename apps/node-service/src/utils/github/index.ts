@@ -24,7 +24,7 @@ import type { FormData, GitHubActionResult, GitHubPRInfo } from './types';
  */
 export const handleGitHubDeployment = async (
   formData: FormData,
-  messageId?: string
+  openMessageId?: string
 ): Promise<{ result: GitHubActionResult; prInfo?: GitHubPRInfo }> => {
   console.log('🏗️ Starting GitHub deployment process...');
 
@@ -59,7 +59,7 @@ export const handleGitHubDeployment = async (
     }
 
     // Step 3: Trigger GitHub Actions
-    const result = await triggerGitHubAction(formData, messageId, prInfo?.number);
+    const result = await triggerGitHubAction(formData, openMessageId, prInfo?.number);
     console.log('🎯 GitHub deployment result:', result.success ? 'SUCCESS' : 'FAILED');
 
     return { result, prInfo };

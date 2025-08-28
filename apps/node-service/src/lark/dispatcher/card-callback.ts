@@ -17,8 +17,8 @@ import {
  * Used to update Lark card status after deployment completion
  */
 export interface DeploymentStatusPayload {
-  /** Lark message ID to update the card */
-  message_id: string;
+  /** Lark open message ID to update the card */
+  open_message_id: string;
 
   /** Deployment status: success (green), failure (red), or skipped (orange) */
   status: 'success' | 'failure' | 'skipped';
@@ -115,7 +115,7 @@ export const handleDeploymentStatusCallback = (client: Lark.Client) => {
 
       // Update the card
       await client.im.v1.message.patch({
-        path: { message_id: payload.message_id },
+        path: { message_id: payload.open_message_id },
         data: { content: JSON.stringify(statusCard.card.data) },
       });
 

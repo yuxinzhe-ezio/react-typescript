@@ -73,9 +73,9 @@ export const onCardActionTrigger = (_client: Lark.Client) => {
     const formData = extractFormData(payload);
     console.log('📊 Extracted form data:', formData);
 
-    // Get message_id for card update (prioritize context)
-    const messageId = payload.context?.open_message_id || payload.message_id;
-    console.log('🆔 Message ID:', messageId);
+    // Get openMessageId for card update (prioritize context)
+    const openMessageId = payload.context?.open_message_id || payload.message_id;
+    console.log('🆔 Open Message ID:', openMessageId);
 
     // According to official docs: create processing status card for sync return
     const processingCard = createProcessingCard({ formData });
@@ -88,11 +88,11 @@ export const onCardActionTrigger = (_client: Lark.Client) => {
           `📍 Deploy settings - Region: ${formData.region}, Trigger: ${formData.trigger}`
         );
 
-        // Use GitHub deployment handling with message ID for callback
-        const { result, prInfo } = await handleGitHubDeployment(formData, messageId);
+        // Use GitHub deployment handling with openMessageId for callback
+        const { result, prInfo } = await handleGitHubDeployment(formData, openMessageId);
 
         // Async update card to final status
-        if (messageId) {
+        if (openMessageId) {
           const statusCard = result.success
             ? createSuccessCard({
                 formData,
@@ -107,7 +107,7 @@ export const onCardActionTrigger = (_client: Lark.Client) => {
           console.log('📔 Returning processing card:', JSON.stringify(processingCard));
           await _client.im.v1.message.patch({
             path: {
-              message_id: messageId,
+              message_id: openMessageId,
             },
             data: {
               content: JSON.stringify(statusCard.card.data),
@@ -117,13 +117,13 @@ export const onCardActionTrigger = (_client: Lark.Client) => {
             `✅ Card updated with deploy result: ${result.success ? 'SUCCESS' : 'FAILURE'}`
           );
         } else {
-          console.error('❌ No message_id found, cannot update card');
+          console.error('❌ No openMessageId found, cannot update card');
         }
       } catch (error) {
         console.error('❌ Error in deployment process:', error);
 
         // Update card to error status
-        if (messageId) {
+        if (openMessageId) {
           try {
             const errorCard = createFailureCard({
               formData,
@@ -133,7 +133,7 @@ export const onCardActionTrigger = (_client: Lark.Client) => {
 
             await _client.im.v1.message.patch({
               path: {
-                message_id: messageId,
+                message_id: openMessageId,
               },
               data: {
                 content: JSON.stringify(errorCard.card.data),
@@ -144,7 +144,7 @@ export const onCardActionTrigger = (_client: Lark.Client) => {
             console.error('❌ Failed to update card with error:', updateError);
           }
         } else {
-          console.error('❌ No message_id found, cannot update card with error');
+          console.error('❌ No openMessageId found, cannot update card with error');
         }
       }
     });

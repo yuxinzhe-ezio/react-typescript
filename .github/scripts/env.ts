@@ -4,6 +4,11 @@ import { PROJECT_BUILD_CONFIGS, type BuildEnv } from '../../packages/configs/src
 
 export type DeployEnvName = 'dev' | 'test' | 'test1' | 'test2' | 'test3' | 'prod';
 
+export const getEnv = (name: string): string | undefined => {
+  const value = process.env[name];
+  return value && value.length > 0 ? value : undefined;
+};
+
 export const pickDeployEnv = (branchName?: string, explicitEnv?: string): DeployEnvName => {
   if (explicitEnv === 'prod' || explicitEnv === 'dev' || explicitEnv === 'test')
     return explicitEnv as DeployEnvName;

@@ -7,7 +7,7 @@ import type { FormData, GitHubActionResult } from './types';
  */
 export const triggerGitHubAction = async (
   formData: FormData,
-  messageId?: string,
+  openMessageId?: string,
   prNumber?: number
 ): Promise<GitHubActionResult> => {
   try {
@@ -44,7 +44,7 @@ export const triggerGitHubAction = async (
             // 简化inputs，只发送基本参数
             region: formData.region || 'global',
             mode: formData.trigger || 'manual',
-            ...(messageId && { message_id: messageId }),
+            ...(openMessageId && { open_message_id: openMessageId }),
           },
         }),
       }

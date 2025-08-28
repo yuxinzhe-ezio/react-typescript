@@ -68,9 +68,9 @@ console.log(`Projects with changes: ${include.map(i => i.key).join(', ') || 'non
 
 // Handle no changes case - notify Lark if needed
 const handleNoChanges = async (): Promise<void> => {
-  const messageId = process.env.MESSAGE_ID;
+  const openMessageId = process.env.OPEN_MESSAGE_ID;
 
-  if (!messageId) {
+  if (!openMessageId) {
     console.log('ℹ️ No notification needed for no changes case');
     return;
   }
@@ -81,7 +81,7 @@ const handleNoChanges = async (): Promise<void> => {
   const actionUrl = process.env.GITHUB_RUN_URL || '';
 
   const payload = {
-    message_id: messageId,
+    open_message_id: openMessageId,
     status: 'skipped',
     branch_name: branchName,
     region,
@@ -93,11 +93,14 @@ const handleNoChanges = async (): Promise<void> => {
 
   try {
     console.log('📬 Notifying Lark: No changed projects');
-    const response = await fetch('http://localhost:31017/lark/callback/update-deployment-status', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+    const response = await fetch(
+      'http://10.1.167.43:31017/lark/callback/update-deployment-status',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }
+    );
 
     if (response.ok) {
       console.log('✅ Successfully notified Lark about no changes');
