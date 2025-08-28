@@ -13,6 +13,11 @@ export interface FormData {
 
 interface CreateProcessingCardOptions {
   formData: FormData;
+  prInfo?: {
+    created?: boolean;
+    number: number;
+    html_url: string;
+  };
 }
 
 /**
@@ -20,6 +25,7 @@ interface CreateProcessingCardOptions {
  */
 export const createProcessingCard = ({
   formData,
+  prInfo,
 }: CreateProcessingCardOptions): { card: LarkCard } => {
   const builder = new LarkCardBuilder();
 
@@ -28,6 +34,11 @@ export const createProcessingCard = ({
   content += `**Branch:** ${formData.branch_name}\n`;
   content += `**Region:** ${formData.region}\n`;
   content += `**Mode:** ${formData.trigger}\n`;
+
+  // Add PR info if available
+  if (prInfo) {
+    content += `**PR:** ${prInfo.created ? 'Created' : 'Updated'} #${prInfo.number}\n`;
+  }
 
   return builder
     .setHeader('Auto Deploy', 'Processing...', 'blue')

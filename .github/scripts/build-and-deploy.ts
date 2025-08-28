@@ -24,6 +24,10 @@ const notifyDeploymentResult = async (notification: DeploymentNotification): Pro
   const { status, projectName, version, branchName, region, trigger, openMessageId, errorMessage } =
     notification;
 
+  // Get PR information from GitHub Actions environment
+  const prNumber = process.env.PR_NUMBER ? parseInt(process.env.PR_NUMBER, 10) : undefined;
+  const prUrl = process.env.PR_URL;
+
   // Get Cloudflare URLs for deployment
   let previewUrl: string | undefined;
   let aliasUrl: string | undefined;
@@ -70,6 +74,8 @@ const notifyDeploymentResult = async (notification: DeploymentNotification): Pro
             action_url: process.env.GITHUB_RUN_URL,
             ...(previewUrl && { preview_url: previewUrl }),
             ...(aliasUrl && { alias_url: aliasUrl }),
+            ...(prNumber && { pr_number: prNumber }),
+            ...(prUrl && { pr_url: prUrl }),
             ...(errorMessage && { error_message: errorMessage }),
           }),
         }

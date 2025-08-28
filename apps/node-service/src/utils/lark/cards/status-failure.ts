@@ -67,11 +67,21 @@ export const createFailureCard = ({
   // Add action buttons
   const buttons: LarkButton[] = [];
 
+  // Add retry deploy button
+  buttons.push({
+    tag: 'button',
+    text: { tag: 'plain_text', content: 'Retry Deploy' },
+    type: 'primary_filled',
+    behaviors: [{ type: 'callback', value: { form_data: formData } }],
+    name: 'deploy',
+    element_id: 'deploy',
+  });
+
   if (actionUrl) {
     buttons.push({
       tag: 'button',
       text: { tag: 'plain_text', content: 'View Actions' },
-      type: 'primary',
+      type: 'default',
       url: actionUrl,
     });
   }

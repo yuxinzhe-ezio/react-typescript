@@ -87,6 +87,8 @@ jobs:
           BRANCH_NAME: ${{ env.BRANCH_NAME }}
           REGION: ${{ github.event.inputs.region || 'global' }}
           MODE: ${{ github.event.inputs.mode || 'manual' }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
           GITHUB_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
       - name: Build & Deploy projects sequentially
@@ -95,6 +97,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           PAIRS: ${{ steps.gen.outputs.pairs }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_URL: ${{ github.event.pull_request.html_url }}
           GITHUB_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           REGION: ${{ github.event.inputs.region || 'global' }}

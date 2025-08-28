@@ -80,6 +80,10 @@ const handleNoChanges = async (): Promise<void> => {
   const trigger = process.env.MODE || 'manual';
   const actionUrl = process.env.GITHUB_RUN_URL || '';
 
+  // Get PR information from GitHub Actions environment
+  const prNumber = process.env.PR_NUMBER ? parseInt(process.env.PR_NUMBER, 10) : undefined;
+  const prUrl = process.env.PR_URL;
+
   const payload = {
     open_message_id: openMessageId,
     status: 'skipped',
@@ -89,6 +93,8 @@ const handleNoChanges = async (): Promise<void> => {
     project_name: 'No Projects',
     version: 'N/A',
     action_url: actionUrl,
+    ...(prNumber && { pr_number: prNumber }),
+    ...(prUrl && { pr_url: prUrl }),
   };
 
   try {

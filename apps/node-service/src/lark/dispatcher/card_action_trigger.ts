@@ -1,7 +1,7 @@
 import * as Lark from '@larksuiteoapi/node-sdk';
 
 import { handleGitHubDeployment } from '../../utils/github';
-import { createFailureCard, createProcessingCard, createSuccessCard } from '../../utils/lark/cards';
+import { createFailureCard, createProcessingCard } from '../../utils/lark/cards';
 
 // Form data structure from Lark card
 type LarkFormData = {
@@ -91,20 +91,22 @@ export const onCardActionTrigger = (_client: Lark.Client) => {
         // Use GitHub deployment handling with openMessageId for callback
         const { result, prInfo } = await handleGitHubDeployment(formData, openMessageId);
 
-        // Async update card to final status
+        // Update card based on GitHub Actions trigger result
         if (openMessageId) {
           const statusCard = result.success
-            ? createSuccessCard({
+            ? createProcessingCard({
                 formData,
-                actionUrl: result.actionUrl,
                 prInfo,
               })
             : createFailureCard({
                 formData,
-                error: result.error || 'Deployment failed',
+                error: result.error || 'Failed to trigger GitHub Actions',
                 actionUrl: result.actionUrl,
               });
-          console.log('📔 Returning processing card:', JSON.stringify(processingCard));
+          console.log(
+            '📔 Updating card after trigger:',
+            result.success ? 'PROCESSING' : 'TRIGGER_FAILED'
+          );
           await _client.im.v1.message.patch({
             path: {
               message_id: openMessageId,
@@ -114,20 +116,20 @@ export const onCardActionTrigger = (_client: Lark.Client) => {
             },
           });
           console.log(
-            `✅ Card updated with deploy result: ${result.success ? 'SUCCESS' : 'FAILURE'}`
+            `✅ Card updated with trigger result: ${result.success ? 'PROCESSING' : 'TRIGGER_FAILED'}`
           );
         } else {
           console.error('❌ No openMessageId found, cannot update card');
         }
       } catch (error) {
-        console.error('❌ Error in deployment process:', error);
+        console.error('❌ Error in GitHub Actions trigger process:', error);
 
         // Update card to error status
         if (openMessageId) {
           try {
             const errorCard = createFailureCard({
               formData,
-              error: `Deployment process failed: ${String(error)}`,
+              error: `Failed to trigger GitHub Actions: ${String(error)}`,
               actionUrl: undefined,
             });
 

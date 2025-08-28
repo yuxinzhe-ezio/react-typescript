@@ -68,7 +68,7 @@ export const createSuccessCard = ({
   }
 
   // Set up basic card
-  builder.setHeader('Auto Deploy', 'Trigger deployment completed', 'blue').addText(content, {
+  builder.setHeader('Auto Deploy', 'Trigger deployment completed', 'green').addText(content, {
     text_color: 'default',
     margin: '0px 0px 8px 0px',
   });
@@ -81,7 +81,7 @@ export const createSuccessCard = ({
     tag: 'button',
     text: { tag: 'plain_text', content: 'Deploy' },
     type: 'primary_filled',
-    behaviors: [{ type: 'callback', value: {} }],
+    behaviors: [{ type: 'callback', value: { form_data: formData } }],
     name: 'deploy',
     element_id: 'deploy',
   });
