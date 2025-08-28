@@ -83,6 +83,12 @@ jobs:
           LAST_SHA: ${{ github.event.before || github.event.pull_request.base.sha || 'HEAD~1' }}
           HEAD_SHA: ${{ github.sha }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
+          LARK_CALLBACK_URL: ${{ vars.LARK_CALLBACK_URL }}
+          MESSAGE_ID: ${{ github.event.inputs.message_id }}
+          BRANCH_NAME: ${{ env.BRANCH_NAME }}
+          REGION: ${{ github.event.inputs.region || 'global' }}
+          MODE: ${{ github.event.inputs.mode || 'manual' }}
+          GITHUB_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
       - name: Build & Deploy projects sequentially
         if: ${{ steps.gen.outputs.pairs != '' }}
@@ -99,7 +105,3 @@ jobs:
           MESSAGE_ID: ${{ github.event.inputs.message_id }}
         run: |
           npx --yes tsx .github/scripts/build-and-deploy.ts
-
-      - name: No changed projects
-        if: ${{ steps.gen.outputs.pairs == '' }}
-        run: echo "No changed projects. Skipping build/deploy." | cat

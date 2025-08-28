@@ -124,8 +124,8 @@ const main = async (): Promise<void> => {
       projectName: cf,
       version: process.env.VERSION || '',
       branchName: process.env.BRANCH_NAME || '',
-      region: process.env.REGION || 'global',
-      trigger: process.env.MODE || 'auto',
+      region: process.env.REGION || '',
+      trigger: process.env.MODE || '',
       messageId: process.env.MESSAGE_ID,
     });
   }
@@ -141,8 +141,8 @@ main().catch(async err => {
     projectName: process.env.CF_PAGES_PROJECT || 'Unknown',
     version: process.env.VERSION || '',
     branchName: process.env.BRANCH_NAME || '',
-    region: process.env.REGION || 'global',
-    trigger: process.env.MODE || 'auto',
+    region: process.env.REGION || '',
+    trigger: process.env.MODE || '',
     messageId: process.env.MESSAGE_ID,
     errorMessage,
   });

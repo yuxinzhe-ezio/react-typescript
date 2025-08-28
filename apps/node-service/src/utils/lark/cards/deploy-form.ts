@@ -72,11 +72,12 @@ export const createDeployFormCard = (): { card: LarkCard } => {
       modeSelect,
       {
         tag: 'column_set',
+        horizontal_spacing: '8px',
         horizontal_align: 'left',
         columns: [
           {
             tag: 'column',
-            width: 'auto',
+            width: 'weighted',
             elements: [confirmButton],
             vertical_spacing: '8px',
             horizontal_align: 'left',

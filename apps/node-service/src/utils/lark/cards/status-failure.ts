@@ -21,15 +21,22 @@ export interface PRInfo {
   html_url?: string;
 }
 
+interface CreateFailureCardOptions {
+  formData: FormData;
+  error?: string;
+  actionUrl?: string;
+  prInfo?: PRInfo;
+}
+
 /**
  * Create failure status card with error information and action buttons
  */
-export const createFailureCard = (
-  formData: FormData,
-  error?: string,
-  actionUrl?: string,
-  prInfo?: PRInfo
-): { card: LarkCard } => {
+export const createFailureCard = ({
+  formData,
+  error,
+  actionUrl,
+  prInfo,
+}: CreateFailureCardOptions): { card: LarkCard } => {
   const builder = new LarkCardBuilder();
 
   // Build basic content
@@ -45,14 +52,14 @@ export const createFailureCard = (
 
   content += `**Branch:** ${formData.branch_name}\n`;
   content += `**Region:** ${formData.region}\n`;
-  content += `**Mode:** ${formData.trigger === 'auto' ? 'Auto Deploy' : 'Manual Deploy'}\n`;
+  content += `**Mode:** ${formData.trigger}\n`;
 
   if (prInfo) {
     content += `\n**PR Status:** ${prInfo.created ? 'Created' : 'Existing'} #${prInfo.number}`;
   }
 
   // Set up basic card
-  builder.setHeader('Auto Deploy Status', 'Deployment failed', 'red').addText(content, {
+  builder.setHeader('Auto Deploy', 'Deployment failed', 'red').addText(content, {
     text_color: 'default',
     margin: '0px 0px 8px 0px',
   });

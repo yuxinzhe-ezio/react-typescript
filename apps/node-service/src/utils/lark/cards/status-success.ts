@@ -21,18 +21,24 @@ export interface PRInfo {
   html_url?: string;
 }
 
+interface CreateSuccessCardOptions {
+  formData: FormData;
+  actionUrl?: string;
+  prInfo?: PRInfo;
+}
+
 /**
  * Create success status card with action buttons and PR information
  */
-export const createSuccessCard = (
-  formData: FormData,
-  actionUrl?: string,
-  prInfo?: PRInfo
-): { card: LarkCard } => {
+export const createSuccessCard = ({
+  formData,
+  actionUrl,
+  prInfo,
+}: CreateSuccessCardOptions): { card: LarkCard } => {
   const builder = new LarkCardBuilder();
 
   // Build content
-  let content = `✅ **Deployment Success**\n\n`;
+  let content = `✅ **Trigger deployment Success**\n\n`;
 
   if (formData.project_name) {
     content += `**Project:** ${formData.project_name}\n`;
@@ -43,8 +49,8 @@ export const createSuccessCard = (
   }
 
   content += `**Branch:** ${formData.branch_name}\n`;
-  content += `**Region:** ${formData.region === 'global' ? 'Global' : 'China'}\n`;
-  content += `**Mode:** ${formData.trigger === 'auto' ? 'Auto Deploy' : 'Manual Deploy'}\n`;
+  content += `**Region:** ${formData.region}\n`;
+  content += `**Mode:** ${formData.trigger}\n`;
 
   if (prInfo) {
     content += `\n**PR Status:** ${prInfo.created ? 'Created' : 'Existing'} #${prInfo.number}`;
@@ -62,7 +68,7 @@ export const createSuccessCard = (
   }
 
   // Set up basic card
-  builder.setHeader('Auto Deploy Status', 'Deployment completed', 'green').addText(content, {
+  builder.setHeader('Auto Deploy', 'Trigger deployment completed', 'blue').addText(content, {
     text_color: 'default',
     margin: '0px 0px 8px 0px',
   });

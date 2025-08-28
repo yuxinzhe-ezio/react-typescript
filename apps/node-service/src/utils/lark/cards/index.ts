@@ -6,6 +6,7 @@
 export { createDeployFormCard } from './deploy-form';
 export { createFailureCard } from './status-failure';
 export { createProcessingCard } from './status-processing';
+export { createSkippedCard } from './status-skipped';
 export { createSuccessCard } from './status-success';
 
 // Export common types

@@ -78,7 +78,7 @@ export const onCardActionTrigger = (_client: Lark.Client) => {
     console.log('🆔 Message ID:', messageId);
 
     // According to official docs: create processing status card for sync return
-    const processingCard = createProcessingCard(formData);
+    const processingCard = createProcessingCard({ formData });
     console.log('✅ Preparing processing status for immediate response');
 
     // Real GitHub deployment handling
@@ -94,9 +94,17 @@ export const onCardActionTrigger = (_client: Lark.Client) => {
         // Async update card to final status
         if (messageId) {
           const statusCard = result.success
-            ? createSuccessCard(formData, result.actionUrl, prInfo)
-            : createFailureCard(formData, result.error || 'Deployment failed', result.actionUrl);
-
+            ? createSuccessCard({
+                formData,
+                actionUrl: result.actionUrl,
+                prInfo,
+              })
+            : createFailureCard({
+                formData,
+                error: result.error || 'Deployment failed',
+                actionUrl: result.actionUrl,
+              });
+          console.log('📔 Returning processing card:', JSON.stringify(processingCard));
           await _client.im.v1.message.patch({
             path: {
               message_id: messageId,
@@ -117,11 +125,11 @@ export const onCardActionTrigger = (_client: Lark.Client) => {
         // Update card to error status
         if (messageId) {
           try {
-            const errorCard = createFailureCard(
+            const errorCard = createFailureCard({
               formData,
-              `Deployment process failed: ${String(error)}`,
-              undefined
-            );
+              error: `Deployment process failed: ${String(error)}`,
+              actionUrl: undefined,
+            });
 
             await _client.im.v1.message.patch({
               path: {

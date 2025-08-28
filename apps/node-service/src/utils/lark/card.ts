@@ -210,17 +210,16 @@ export class LarkCardBuilder {
     if (buttons.length > 0) {
       this.card.data.body.elements.push({
         tag: 'column_set',
+        horizontal_spacing: '8px',
         horizontal_align: 'left',
-        columns: [
-          {
-            tag: 'column',
-            width: 'auto',
-            elements: buttons,
-            vertical_spacing: '8px',
-            horizontal_align: 'left',
-            vertical_align: 'top',
-          },
-        ],
+        columns: buttons.map(button => ({
+          tag: 'column',
+          width: 'weighted',
+          elements: [button],
+          vertical_spacing: '8px',
+          horizontal_align: 'left',
+          vertical_align: 'top',
+        })),
       });
     }
 
