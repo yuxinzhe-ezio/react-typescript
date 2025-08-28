@@ -69,9 +69,8 @@ console.log(`Projects with changes: ${include.map(i => i.key).join(', ') || 'non
 // Handle no changes case - notify Lark if needed
 const handleNoChanges = async (): Promise<void> => {
   const messageId = process.env.MESSAGE_ID;
-  const callbackUrl = process.env.LARK_CALLBACK_URL;
 
-  if (!messageId || !callbackUrl) {
+  if (!messageId) {
     console.log('ℹ️ No notification needed for no changes case');
     return;
   }
@@ -94,7 +93,7 @@ const handleNoChanges = async (): Promise<void> => {
 
   try {
     console.log('📬 Notifying Lark: No changed projects');
-    const response = await fetch(`${callbackUrl}/lark/callback/update-deployment-status`, {
+    const response = await fetch('http://localhost:31017/lark/callback/update-deployment-status', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),

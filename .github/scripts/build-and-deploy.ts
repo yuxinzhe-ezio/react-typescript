@@ -25,6 +25,33 @@ const notifyDeploymentResult = async (notification: DeploymentNotification): Pro
   const { status, projectName, version, branchName, region, trigger, messageId, errorMessage } =
     notification;
 
+  // Get Cloudflare URLs for deployment
+  let previewUrl: string | undefined;
+  let aliasUrl: string | undefined;
+
+  try {
+    const apiToken = getEnv('CLOUDFLARE_API_TOKEN');
+    const accountId = getEnv('CLOUDFLARE_ACCOUNT_ID');
+
+    if (apiToken && accountId && projectName) {
+      const res = await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${accountId}/pages/projects/${projectName}/deployments?per_page=1`,
+        { headers: { Authorization: `Bearer ${apiToken}` } }
+      );
+
+      if (res.ok) {
+        const data = (await res.json()) as
+          | { result: { url: string; aliases: string[] }[] }
+          | undefined;
+        const latest = data?.result?.[0];
+        previewUrl = latest?.url;
+        aliasUrl = latest?.aliases?.[0];
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to fetch Cloudflare deployment URLs:', error);
+  }
+
   // Send webhook notification (existing send-lark logic)
   const webhook = process.env.LARK_WEBHOOK_URL;
   if (webhook) {
@@ -42,10 +69,10 @@ const notifyDeploymentResult = async (notification: DeploymentNotification): Pro
 
   // Send callback notification to node-service (if messageId exists)
   if (messageId) {
-    const callbackUrl = process.env.LARK_CALLBACK_URL;
-    if (callbackUrl) {
-      try {
-        const response = await fetch(`${callbackUrl}/lark/callback/update-deployment-status`, {
+    try {
+      const response = await fetch(
+        'http://localhost:31017/lark/callback/update-deployment-status',
+        {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -57,16 +84,20 @@ const notifyDeploymentResult = async (notification: DeploymentNotification): Pro
             project_name: projectName,
             version,
             action_url: process.env.GITHUB_RUN_URL,
+            ...(previewUrl && { preview_url: previewUrl }),
+            ...(aliasUrl && { alias_url: aliasUrl }),
             ...(errorMessage && { error_message: errorMessage }),
           }),
-        });
-
-        if (!response.ok) {
-          console.warn(`Failed to send callback: ${response.status}`);
         }
-      } catch (error) {
-        console.warn(`Callback error:`, error);
+      );
+
+      if (!response.ok) {
+        console.warn(`Failed to send callback: ${response.status}`);
+      } else {
+        console.log('✅ Successfully notified deployment status');
       }
+    } catch (error) {
+      console.warn(`Callback error:`, error);
     }
   }
 };
