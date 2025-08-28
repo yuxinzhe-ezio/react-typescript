@@ -5,6 +5,7 @@
 import * as Lark from '@larksuiteoapi/node-sdk';
 import { Body, Controller, Post } from '@nestjs/common';
 
+import { LARK_APP_ID, LARK_APP_SECRET } from '../constants';
 import {
   type DeploymentStatusPayload,
   handleDeploymentStatusCallback,
@@ -17,8 +18,13 @@ export class LarkCallbackController {
   constructor() {
     // Initialize Lark client
     this.client = new Lark.Client({
-      appId: process.env.LARK_APP_ID || '',
-      appSecret: process.env.LARK_APP_SECRET || '',
+      appId: LARK_APP_ID,
+      appSecret: LARK_APP_SECRET,
+    });
+
+    console.log('🔧 Lark Client initialized with:', {
+      appId: LARK_APP_ID,
+      appSecretLength: LARK_APP_SECRET.length,
     });
   }
 

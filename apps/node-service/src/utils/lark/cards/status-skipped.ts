@@ -37,7 +37,7 @@ export const createSkippedCard = ({
   content += `**Mode:** ${formData.trigger}\n`;
 
   // Set up basic card
-  builder.setHeader('Auto Deploy Status', 'No changes detected', 'orange').addText(content, {
+  builder.setHeader('Auto Deploy', 'No changes detected', 'orange').addText(content, {
     text_color: 'default',
     margin: '0px 0px 8px 0px',
   });
