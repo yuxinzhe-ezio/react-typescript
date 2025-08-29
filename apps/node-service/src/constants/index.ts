@@ -6,7 +6,7 @@ export const LARK_BASE_CONFIG = {
   appSecret: LARK_APP_SECRET,
 } as const;
 
-export const SERVER_PORT = Number(process.env.PORT || 30001);
+export const SERVER_PORT = Number(process.env.PORT || 8080);
 
 export const LARK_TRIGGER_KEYWORDS = ['发布', 'deploy'] as const;
 

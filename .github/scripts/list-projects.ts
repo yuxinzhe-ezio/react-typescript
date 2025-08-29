@@ -99,11 +99,14 @@ const handleNoChanges = async (): Promise<void> => {
 
   try {
     console.log('📬 Notifying Lark: No changed projects');
-    const response = await fetch('https://10.0.5.50:30001/lark/callback/update-deployment-status', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+    const response = await fetch(
+      'http://35.91.205.249:8080/lark/callback/update-deployment-status',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }
+    );
 
     if (response.ok) {
       console.log('✅ Successfully notified Lark about no changes');

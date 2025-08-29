@@ -59,7 +59,7 @@ const notifyDeploymentResult = async (notification: DeploymentNotification): Pro
   if (openMessageId) {
     try {
       const response = await fetch(
-        'https://10.0.5.50:30001/lark/callback/update-deployment-status',
+        'http://35.91.205.249:8080/lark/callback/update-deployment-status',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
