@@ -66,8 +66,71 @@ const include = changed.length
 
 console.log(`Projects with changes: ${include.map(i => i.key).join(', ') || 'none'}`);
 
-const pairs = include.map(i => `${i.key},${i.cf}`).join('|');
-const pairsLine = `pairs=${pairs.replace(/%/g, '%25').replace(/\n/g, '%0A').replace(/\r/g, '%0D')}`;
-if (process.env.GITHUB_OUTPUT) {
-  appendFileSync(process.env.GITHUB_OUTPUT, `\n${pairsLine}\n`);
-}
+// Handle no changes case - notify Lark if needed
+const handleNoChanges = async (): Promise<void> => {
+  const openMessageId = process.env.OPEN_MESSAGE_ID;
+
+  if (!openMessageId) {
+    console.log('ℹ️ No notification needed for no changes case');
+    return;
+  }
+
+  const branchName = process.env.BRANCH_NAME || 'unknown';
+  const region = process.env.REGION || 'global';
+  const trigger = process.env.MODE || 'manual';
+  const actionUrl = process.env.GITHUB_RUN_URL || '';
+
+  // Get PR information from GitHub Actions environment
+  const prNumber = process.env.PR_NUMBER ? parseInt(process.env.PR_NUMBER, 10) : undefined;
+  const prUrl = process.env.PR_URL;
+
+  const payload = {
+    open_message_id: openMessageId,
+    status: 'skipped',
+    branch_name: branchName,
+    region,
+    trigger,
+    project_name: 'No Projects',
+    version: 'N/A',
+    action_url: actionUrl,
+    ...(prNumber && { pr_number: prNumber }),
+    ...(prUrl && { pr_url: prUrl }),
+  };
+
+  try {
+    console.log('📬 Notifying Lark: No changed projects');
+    const response = await fetch('https://10.0.5.50:30001/lark/callback/update-deployment-status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (response.ok) {
+      console.log('✅ Successfully notified Lark about no changes');
+    } else {
+      console.error(`❌ Failed to notify Lark: ${response.status}`);
+    }
+  } catch (error) {
+    console.error('❌ Error notifying Lark:', error);
+  }
+};
+
+const main = async (): Promise<void> => {
+  // If no projects changed, notify Lark
+  if (include.length === 0) {
+    await handleNoChanges();
+  }
+
+  // Always output pairs for GitHub Actions
+  const pairs = include.map(i => `${i.key},${i.cf}`).join('|');
+  const pairsLine = `pairs=${pairs.replace(/%/g, '%25').replace(/\n/g, '%0A').replace(/\r/g, '%0D')}`;
+  if (process.env.GITHUB_OUTPUT) {
+    appendFileSync(process.env.GITHUB_OUTPUT, `\n${pairsLine}\n`);
+  }
+};
+
+// Run main function
+main().catch(err => {
+  console.error('❌ Script failed:', err);
+  process.exit(1);
+});
