@@ -60,15 +60,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
-        with:
-          path: /home/runner/setup-pnpm/node_modules/.bin/store
-          key: pnpm-store-${{ runner.os }}-${{ env.NODE_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: |
-            pnpm-store-${{ runner.os }}-${{ env.NODE_VERSION }}-
-            pnpm-store-${{ runner.os }}-
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Prepare (version + install)
         id: prepare
