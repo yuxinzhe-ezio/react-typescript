@@ -15,8 +15,8 @@ export const DEPLOY_REGIONS = ['global', 'cn'] as const;
 export const GITHUB_API_BASE_URL = 'https://api.github.com';
 
 // GitHub Actions constants
-export const GITHUB_OWNER = process.env.GITHUB_OWNER || 'yuxinzhe-ezio';
-export const GITHUB_REPO = process.env.GITHUB_REPO || 'react-typescript';
+export const GITHUB_OWNER = process.env.GITHUB_OWNER || 'Plaud-AI';
+export const GITHUB_REPO = process.env.GITHUB_REPO || 'plaud-web';
 export const GITHUB_TOKEN =
   process.env.GITHUB_TOKEN ||
   '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';
