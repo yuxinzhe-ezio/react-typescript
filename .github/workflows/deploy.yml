@@ -66,12 +66,12 @@ jobs:
       - name: Prepare (version + install)
         id: prepare
         run: |
-          npx --yes tsx .github/scripts/gen-version.ts
           pnpm install --frozen-lockfile --prefer-offline
+          pnpm exec tsx .github/scripts/gen-version.ts
 
       - name: Generate project list
         id: gen
-        run: npx --yes tsx .github/scripts/list-projects.ts
+        run: pnpm exec tsx .github/scripts/list-projects.ts
         env:
           LAST_SHA: ${{ github.event.before || github.event.pull_request.base.sha || 'HEAD~1' }}
           HEAD_SHA: ${{ github.sha }}
@@ -97,4 +97,4 @@ jobs:
           MODE: ${{ github.event.inputs.mode || 'manual' }}
           OPEN_MESSAGE_ID: ${{ github.event.inputs.open_message_id }}
         run: |
-          npx --yes tsx .github/scripts/build-and-deploy.ts
+          pnpm exec tsx .github/scripts/build-and-deploy.ts
