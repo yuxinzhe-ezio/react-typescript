@@ -60,25 +60,18 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
-        with:
-          path: /home/runner/setup-pnpm/node_modules/.bin/store
-          key: pnpm-store-${{ runner.os }}-${{ env.NODE_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: |
-            pnpm-store-${{ runner.os }}-${{ env.NODE_VERSION }}-
-            pnpm-store-${{ runner.os }}-
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Prepare (version + install)
         id: prepare
         run: |
-          npx --yes tsx .github/scripts/gen-version.ts
           pnpm install --frozen-lockfile --prefer-offline
+          pnpm exec tsx .github/scripts/gen-version.ts
 
       - name: Generate project list
         id: gen
-        run: npx --yes tsx .github/scripts/list-projects.ts
+        run: pnpm exec tsx .github/scripts/list-projects.ts
         env:
           LAST_SHA: ${{ github.event.before || github.event.pull_request.base.sha || 'HEAD~1' }}
           HEAD_SHA: ${{ github.sha }}
@@ -104,4 +97,4 @@ jobs:
           MODE: ${{ github.event.inputs.mode || 'manual' }}
           OPEN_MESSAGE_ID: ${{ github.event.inputs.open_message_id }}
         run: |
-          npx --yes tsx .github/scripts/build-and-deploy.ts
+          pnpm exec tsx .github/scripts/build-and-deploy.ts
