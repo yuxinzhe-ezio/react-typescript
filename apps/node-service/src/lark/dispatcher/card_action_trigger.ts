@@ -23,6 +23,10 @@ type CardActionEvent = {
     value?: string;
     form_data?: LarkFormData;
     form_value?: LarkFormData; // Actual data source
+    // Some callbacks put payload under value.{form_data|form_value} or even value directly
+    // so we keep value as unknown for broader compatibility
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    value?: any;
   };
   form?: LarkFormData;
   context?: {
@@ -39,14 +43,34 @@ type CardActionEvent = {
 const extractFormData = (payload: CardActionEvent): LarkFormData => {
   // Extract from different possible sources
   const actionData = payload.action;
-  const formValue = actionData?.form_value; // Actual data is here
-  const formData = actionData?.form_data || payload.form;
+  const valueContainer = (actionData as unknown as { value?: unknown })?.value as
+    | { form_value?: LarkFormData; form_data?: LarkFormData }
+    | LarkFormData
+    | undefined;
+
+  const formValue =
+    actionData?.form_value ||
+    (valueContainer && 'form_value' in (valueContainer as object)
+      ? (valueContainer as { form_value?: LarkFormData }).form_value
+      : undefined);
+
+  const formData =
+    actionData?.form_data ||
+    (valueContainer && 'form_data' in (valueContainer as object)
+      ? (valueContainer as { form_data?: LarkFormData }).form_data
+      : undefined) ||
+    (valueContainer &&
+    !('form_value' in (valueContainer as object)) &&
+    !('form_data' in (valueContainer as object))
+      ? (valueContainer as LarkFormData)
+      : undefined) ||
+    payload.form;
 
   console.log('🔍 Action data:', actionData);
   console.log('🔍 Form value:', formValue);
   console.log('🔍 Form data:', formData);
 
-  // Extract with priority: form_value > form_data > form > defaults
+  // Extract with priority: form_value > form_data > value > form > defaults
   const branch_name = formValue?.branch_name || formData?.branch_name || 'dev';
   const region = formValue?.region || formData?.region || 'global'; // global | cn
   const trigger = formValue?.trigger || formData?.trigger || 'auto'; // manual | auto
