@@ -1,0 +1,62 @@
+.sidebar {
+  background: #fff;
+  border-right: 1px solid #f0f0f0;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.06);
+
+  .menu {
+    border-right: none;
+    padding: 16px 0;
+
+    :global {
+      .ant-menu-item {
+        margin: 4px 8px;
+        border-radius: 6px;
+        height: 40px;
+        line-height: 40px;
+
+        &:hover {
+          background-color: rgba(31, 31, 31, 0.06);
+        }
+
+        &.ant-menu-item-selected {
+          background-color: rgba(31, 31, 31, 0.1);
+          color: #1f1f1f;
+
+          &::after {
+            border-right-color: #1f1f1f;
+          }
+        }
+      }
+
+      .ant-menu-submenu {
+        .ant-menu-submenu-title {
+          margin: 4px 8px;
+          border-radius: 6px;
+          height: 40px;
+          line-height: 40px;
+
+          &:hover {
+            background-color: rgba(31, 31, 31, 0.06);
+          }
+        }
+
+        .ant-menu-sub {
+          background: #fafafa;
+
+          .ant-menu-item {
+            margin: 2px 16px;
+            padding-left: 32px !important;
+
+            &:hover {
+              background-color: rgba(31, 31, 31, 0.06);
+            }
+
+            &.ant-menu-item-selected {
+              background-color: rgba(31, 31, 31, 0.1);
+            }
+          }
+        }
+      }
+    }
+  }
+}

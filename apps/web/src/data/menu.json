@@ -1,0 +1,19 @@
+{
+  "menuItems": [
+    {
+      "key": "deploy-platform",
+      "label": "Deploy Platform",
+      "icon": "DeploymentUnitOutlined",
+      "children": [
+        {
+          "key": "region-global",
+          "label": "Global"
+        },
+        {
+          "key": "region-cn",
+          "label": "CN"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,102 @@
+.container {
+  .header {
+    margin-bottom: 24px;
+
+    h2 {
+      color: #1f1f1f;
+      margin-bottom: 8px;
+    }
+
+    p {
+      color: #666;
+      margin-bottom: 0;
+    }
+  }
+
+  .actions {
+    margin-bottom: 24px;
+    padding: 16px 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .stats {
+    margin-bottom: 24px;
+
+    .statsRow {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+
+      .statCard {
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+
+        .statContent {
+          text-align: center;
+
+          .statNumber {
+            font-size: 28px;
+            font-weight: 600;
+            color: #1f1f1f;
+            margin-bottom: 4px;
+          }
+
+          .statLabel {
+            font-size: 14px;
+            color: #666;
+          }
+        }
+      }
+    }
+  }
+
+  .tableCard {
+    margin-bottom: 24px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+
+    .table {
+      :global {
+        .ant-table-thead > tr > th {
+          background-color: #fafafa;
+          font-weight: 600;
+        }
+
+        .ant-table-tbody > tr:hover > td {
+          background-color: #f8f9fa;
+        }
+      }
+    }
+  }
+
+  .progressCard {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+
+    .progressSection {
+      .progressItem {
+        margin-bottom: 20px;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+
+        .progressLabel {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 8px;
+
+          span:first-child {
+            font-weight: 500;
+            color: #1f1f1f;
+          }
+
+          span:last-child {
+            color: #666;
+            font-size: 12px;
+          }
+        }
+      }
+    }
+  }
+}

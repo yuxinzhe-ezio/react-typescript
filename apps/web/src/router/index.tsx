@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, RouteObject, RouterProvider } from 'react-router-dom';
 
 import { Spin } from 'antd';
 
@@ -13,16 +13,20 @@ const PageLoading: React.FC = () => (
 );
 
 // Transform route configs to React Router format
-const transformRoutes = (routeConfigs: RouteConfig[]) => {
-  return routeConfigs.map(route => ({
-    path: route.path,
-    index: route.index,
-    element: (
-      <Suspense fallback={<PageLoading />}>
-        <route.element />
-      </Suspense>
-    ),
-  }));
+const transformRoutes = (routeConfigs: RouteConfig[]): RouteObject[] => {
+  return routeConfigs.map(route => {
+    const Component = route.element;
+    return {
+      path: route.path,
+      index: route.index,
+      element: (
+        <Suspense fallback={<PageLoading />}>
+          <Component />
+        </Suspense>
+      ),
+      children: route.children ? transformRoutes(route.children) : undefined,
+    };
+  });
 };
 
 // Create router instance

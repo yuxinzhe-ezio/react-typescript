@@ -1,0 +1,45 @@
+.header {
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+  padding: 0 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+
+  .headerContent {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 100%;
+
+    .leftSection {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+
+      .collapseBtn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 4px;
+        transition: all 0.3s;
+
+        &:hover {
+          background-color: rgba(0, 0, 0, 0.06);
+        }
+      }
+
+      .title {
+        margin: 0;
+        color: #1f1f1f;
+        font-weight: 600;
+      }
+    }
+
+    .rightSection {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+  }
+}
