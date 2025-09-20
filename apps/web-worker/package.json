@@ -1,0 +1,19 @@
+{
+  "name": "web-worker",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:report": "tsx scripts/generate-test-report.ts",
+    "dev": "tsx scripts/test.ts"
+  },
+  "devDependencies": {
+    "@types/jest": "29.5.12",
+    "jest": "29.7.0",
+    "jest-environment-jsdom": "29.7.0",
+    "ts-jest": "29.1.5",
+    "tsx": "4.19.2",
+    "typescript": "5.9.2"
+  }
+}

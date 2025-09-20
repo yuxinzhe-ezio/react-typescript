@@ -19,17 +19,17 @@ export default defineConfig([
       '*.min.js',
       'apps/web/public/**',
       'apps/web/scripts/**',
-      'apps/web/config/**'
-    ]
+      'apps/web/config/**',
+    ],
   },
 
   // Base configuration
   js.configs.recommended,
-  
+
   // TypeScript configuration
   ...tseslint.configs.recommended.map(config => ({
     ...config,
-    files: ['**/*.{ts,tsx}']
+    files: ['**/*.{ts,tsx}'],
   })),
 
   // React + TypeScript configuration
@@ -38,18 +38,18 @@ export default defineConfig([
     plugins: {
       react: reactPlugin,
       'react-hooks': reactHooksPlugin,
-      'simple-import-sort': simpleImportSort
+      'simple-import-sort': simpleImportSort,
     },
     languageOptions: {
       globals: globals.browser,
       parser: tseslint.parser,
       parserOptions: {
         ecmaFeatures: { jsx: true },
-        project: ['./tsconfig.json', './apps/*/tsconfig.json', './packages/*/tsconfig.json']
-      }
+        project: ['./tsconfig.json', './apps/*/tsconfig.json', './packages/*/tsconfig.json'],
+      },
     },
     settings: {
-      react: { version: 'detect' }
+      react: { version: 'detect' },
     },
     rules: {
       // React essentials
@@ -99,12 +99,13 @@ export default defineConfig([
       'simple-import-sort/exports': 'error',
 
       // Code quality
-      'no-console': 'off',
+      'no-case-declarations': 'off',
+      'no-console': ['error', { allow: ['warn', 'error'] }],
       'no-duplicate-imports': 'error',
-      'prefer-object-spread': 'error'
-    }
+      'prefer-object-spread': 'error',
+    },
   },
 
   // Prettier (must be last)
-  prettierConfig
+  prettierConfig,
 ]);
