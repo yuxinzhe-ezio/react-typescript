@@ -60,8 +60,8 @@ export const offline = {
 };
 
 export const online = {
-  hashStringToPercentage: onlineFunctions.hashStringToPercentage,
-  parseCookies: onlineFunctions.parseCookies,
+  hashStringToPercentage,
+  parseCookies,
   buildNewPagesOrigin: onlineFunctions.buildNewPagesOrigin,
   processRouting: onlineFunctions.processRouting,
 };

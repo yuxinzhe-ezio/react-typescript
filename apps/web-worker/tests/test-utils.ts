@@ -68,7 +68,7 @@ function testRouting(url: string, options: RoutingTestOptions = {}): RoutingTest
   return {
     targetUrl: targetUrl,
     targetHostname: targetHostname,
-    useNewVersion: clientTag ? hashStringToPercentage(clientTag) < GRAY_PERCENTAGE : false,
+    useNewVersion: clientTag ? hashStringToPercentage(clientTag) < GRAY_PERCENTAGE : true,
     clientTag: clientTag || undefined,
     hash: clientTag ? hashStringToPercentage(clientTag) : null,
     grayPercentage: GRAY_PERCENTAGE,

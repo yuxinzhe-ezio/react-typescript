@@ -82,10 +82,13 @@ function processRouting({ inUrl, cookieHeader, headerEnv, grayPercentage, always
     .map(s => s.trim())
     .filter(Boolean);
 
-  let useNewVersion = false; // 默认使用旧版本
+  let useNewVersion = true; // 默认使用新版本（升级）
   if (clientTag) {
     const hash = hashStringToPercentage(clientTag);
     useNewVersion = hash < GRAY_PERCENTAGE;
+  } else {
+    // 没有客户端标签时默认使用新版本
+    useNewVersion = true;
   }
 
   let targetHostname;

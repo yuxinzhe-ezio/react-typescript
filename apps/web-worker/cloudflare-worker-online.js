@@ -1,10 +1,10 @@
-// 🎯 Cloudflare Worker 完整版本 - 线上环境 (beta.plaud.ai)
+// 🎯 Cloudflare Worker 完整版本 - 在线环境 (beta.plaud.ai)
 //
 // 使用说明：
 // 1. 核心路由逻辑部分（processRouting 及其依赖函数）可以从 online.worker.js 复制替换
 // 2. export default { fetch } 部分保持不变，无需修改
 // 3. 每次更新只需要替换 "=== 核心路由逻辑开始 ===" 到 "=== 核心路由逻辑结束 ===" 之间的代码
-// 4. 线上版本默认资源指向 plaud-web.pages.dev（旧版本）
+// 4. 在线版本默认资源指向 plaud-web3.pages.dev（新版本）
 
 // =================================================================
 // === 核心路由逻辑开始 ===
@@ -32,80 +32,48 @@ function parseCookies(cookieHeader = '') {
 }
 
 function buildNewPagesOrigin(hostname) {
-  // 白名单：这些域名不做路由处理，直接返回原域名
-  const whitelist = ['api.plaud.ai', 'www.plaud.ai', 'plaud.ai'];
-  if (whitelist.includes(hostname)) {
-    return `https://${hostname}`;
-  }
-
-  const parts = hostname.split('.');
-
-  // 处理 plaud.ai 域名
-  if (hostname.includes('plaud.ai')) {
-    if (parts.length === 3) {
-      // 子域名：beta.plaud.ai -> beta.plaud-web.pages.dev
-      const [sub] = parts;
-      return `https://${sub}.plaud-web.pages.dev`;
-    } else if (parts.length === 2) {
-      // 根域名：plaud.ai -> plaud-web.pages.dev (兜底)
-      return 'https://plaud-web.pages.dev';
-    }
-    // 复杂子域名 (>3 parts)：admin.api.plaud.ai -> plaud-web.pages.dev (兜底)
-    return 'https://plaud-web.pages.dev';
-  }
-
-  // 原有逻辑保持不变
-  if (parts.length === 3) {
-    const [sub] = parts;
-    return `https://${sub}.plaud-web.pages.dev`;
-  }
-  return 'https://plaud-web.pages.dev';
+  // 在线环境固定劫持 beta.plaud.ai/*，统一映射到新版本域名
+  return 'https://plaud-web3.pages.dev';
 }
 
 /**
- * 🎯 核心路由逻辑 - 处理灰度发布和域名转发（线上版本）
+ * 🎯 核心路由逻辑 - 处理灰度发布和域名转发（在线版本）
  * @param {Object} params - 参数对象
  * @param {URL} params.inUrl - URL 对象
  * @param {string} params.cookieHeader - Cookie 头信息
- * @param {string} params.headerEnv - x-pld-env 头信息
  * @param {number} params.grayPercentage - 灰度百分比
  * @param {string} params.alwaysOldRoutes - 总是使用旧版本的路由
  * @returns {string} 返回目标主机名
  */
-function processRouting({ inUrl, cookieHeader, headerEnv, grayPercentage, alwaysOldRoutes }) {
+function processRouting({ inUrl, cookieHeader, grayPercentage, alwaysOldRoutes }) {
   const host = inUrl.hostname;
   const path = inUrl.pathname;
 
-  // 白名单：这些域名不做路由处理，直接返回原域名
-  const whitelist = ['api.plaud.ai', 'www.plaud.ai', 'plaud.ai'];
-  if (whitelist.includes(host)) {
-    return host;
-  }
-
   const cookies = parseCookies(cookieHeader || '');
   const clientTag = cookies['x-pld-tag'];
-  const GRAY_PERCENTAGE = grayPercentage !== undefined ? parseInt(grayPercentage) : 0; // 线上默认0%灰度
+  const GRAY_PERCENTAGE = grayPercentage !== undefined ? parseInt(grayPercentage) : 100; // 在线默认100%灰度（升级）
   const oldRoutes = (alwaysOldRoutes || '')
     .split(',')
     .map(s => s.trim())
     .filter(Boolean);
 
-  let useNewVersion = false; // 默认使用旧版本
+  let useNewVersion = true; // 默认使用新版本（升级）
   if (clientTag) {
     const hash = hashStringToPercentage(clientTag);
     useNewVersion = hash < GRAY_PERCENTAGE;
+  } else {
+    // 没有客户端标签时默认使用新版本
+    useNewVersion = true;
   }
 
   let targetHostname;
 
-  if (headerEnv) {
-    targetHostname = `${headerEnv}.plaud-web.pages.dev`;
-  } else if (oldRoutes.some(r => path.startsWith(r))) {
-    targetHostname = 'plaud-web.pages.dev'; // 线上旧版本资源
+  if (oldRoutes.some(r => path.startsWith(r))) {
+    targetHostname = 'plaud-web-dist.pages.dev'; // 在线旧版本资源
   } else if (useNewVersion) {
-    targetHostname = buildNewPagesOrigin(host).replace('https://', '');
+    targetHostname = 'plaud-web3.pages.dev'; // 在线环境新版本使用新域名
   } else {
-    targetHostname = 'plaud-web.pages.dev'; // 线上默认旧版本资源
+    targetHostname = 'plaud-web-dist.pages.dev'; // 在线默认旧版本资源
   }
 
   return targetHostname;
@@ -125,13 +93,11 @@ export default {
     try {
       const inUrl = new URL(request.url);
       const cookieHeader = request.headers.get('cookie') || '';
-      const headerEnv = request.headers.get('x-pld-env');
 
       // 调用核心路由逻辑
       const targetHostname = processRouting({
         inUrl,
         cookieHeader,
-        headerEnv,
         grayPercentage: env.GRAY_PERCENTAGE,
         alwaysOldRoutes: env.ALWAYS_OLD_ROUTES,
       });
@@ -145,7 +111,6 @@ export default {
         original: request.url,
         target: targetUrl,
         clientTag: parseCookies(cookieHeader)['x-pld-tag'],
-        env: headerEnv,
         grayPercentage: env.GRAY_PERCENTAGE,
         environment: 'online',
       });

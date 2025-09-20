@@ -111,16 +111,16 @@ describe('Routing Logic (灰度发布和路由转发)', () => {
       expect(result.targetUrl).toBe('https://staging.plaud-web3.pages.dev/dashboard');
     });
 
-    it('没有客户端标签应该默认旧版本', () => {
+    it('没有客户端标签应该默认新版本', () => {
       const result = testRouting(baseUrl, {
         cookieHeader: 'session=abc',
         grayPercentage: 50,
       });
 
-      expect(result.useNewVersion).toBe(false);
+      expect(result.useNewVersion).toBe(true);
       expect(result.clientTag).toBeUndefined();
       expect(result.hash).toBeNull();
-      expect(result.targetHostname).toBe('test.plaud-web-dist.pages.dev');
+      expect(result.targetHostname).toBe('app.plaud-web3.pages.dev');
     });
 
     it('100% 灰度应该所有用户都是新版本', () => {

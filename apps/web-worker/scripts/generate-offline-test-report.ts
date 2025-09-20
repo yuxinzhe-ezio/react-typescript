@@ -85,7 +85,7 @@ apps/web-worker/
 │   ├── shared-logic.js                      # 共享工具函数
 │   └── index.ts                             # 入口文件
 ├── tests/
-│   ├── routing-logic.test.ts                # 离线路由逻辑测试
+│   ├── offline-routing.test.ts              # 离线路由逻辑测试
 │   ├── online-routing.test.ts               # 在线路由逻辑测试
 │   └── test-utils.ts                        # 测试工具函数
 ├── scripts/
@@ -173,8 +173,8 @@ function generateDetailedResults(testResults: JestTestResult): string {
       });
     });
 
-    // 对 routing-logic.test.ts 文件，先处理基础功能测试，再处理路由测试
-    if (fileName === 'routing-logic.test.ts') {
+    // 对 offline-routing.test.ts 文件，先处理基础功能测试，再处理路由测试
+    if (fileName === 'offline-routing.test.ts') {
       // 分离基础功能测试和路由测试
       const basicTests = new Map();
       const routingTests = new Map();

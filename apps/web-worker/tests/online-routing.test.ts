@@ -1,420 +1,539 @@
 // 测试在线环境（beta.plaud.ai）的路由逻辑
 import { online } from '../src/shared-logic.js';
 
-// 在线环境测试辅助函数
-function testOnlineRouting(
-  url: string,
-  options: {
-    cookieHeader?: string;
-    headerEnv?: string;
-    grayPercentage?: number;
-    alwaysOldRoutes?: string;
-  } = {}
-) {
-  const inUrl = new URL(url);
-  const { cookieHeader, headerEnv, grayPercentage, alwaysOldRoutes } = options;
-
-  const cookies = online.parseCookies(cookieHeader || '') as any;
-  const clientTag = cookies['x-pld-tag'];
-  const hash = clientTag ? online.hashStringToPercentage(clientTag) : null;
-  const useNewVersion = clientTag ? hash! < (grayPercentage || 0) : false;
-
-  const targetHostname = online.processRouting({
-    inUrl,
-    cookieHeader: cookieHeader || '',
-    headerEnv: headerEnv || '',
-    grayPercentage: grayPercentage || 0,
-    alwaysOldRoutes: alwaysOldRoutes || '',
-  });
-
-  const targetUrl = new URL(url);
-  targetUrl.hostname = targetHostname;
-
-  return {
-    originalUrl: url,
-    targetUrl: targetUrl.toString(),
-    targetHostname,
-    useNewVersion,
-    clientTag,
-    hash,
-    grayPercentage: grayPercentage || 0,
-    oldRoutes: (alwaysOldRoutes || '')
-      .split(',')
-      .map(s => s.trim())
-      .filter(Boolean),
-    originalHost: inUrl.hostname,
-    path: inUrl.pathname,
-  };
-}
-
 describe('Online Routing Logic (beta.plaud.ai 在线环境)', () => {
   describe('online.hashStringToPercentage - 在线环境哈希算法', () => {
     it('应该返回一致的哈希百分比', () => {
-      expect(online.hashStringToPercentage('beta_user123')).toBe(76);
-      expect(online.hashStringToPercentage('beta_user456')).toBe(55);
-      expect(online.hashStringToPercentage('beta_user789')).toBe(34);
+      expect(online.hashStringToPercentage('user123')).toBe(73);
+      expect(online.hashStringToPercentage('user456')).toBe(94);
+      expect(online.hashStringToPercentage('user789')).toBe(15);
     });
 
     it('相同字符串应该返回相同结果', () => {
-      const str = 'betaTestUser';
+      const str = 'beta_testUser';
       expect(online.hashStringToPercentage(str)).toBe(online.hashStringToPercentage(str));
     });
 
     it('应该返回 0-99 范围内的值', () => {
-      for (let i = 0; i < 50; i++) {
-        const hash = online.hashStringToPercentage(`beta_user_${i}`);
+      const testStrings = [
+        'a',
+        'beta_user1',
+        'beta_user2',
+        'beta_user3',
+        'very_long_user_name_for_testing',
+      ];
+      testStrings.forEach(str => {
+        const hash = online.hashStringToPercentage(str);
         expect(hash).toBeGreaterThanOrEqual(0);
         expect(hash).toBeLessThan(100);
-      }
+      });
     });
   });
 
   describe('buildNewPagesOrigin - 在线域名构建', () => {
     it('应该处理 beta.plaud.ai 子域名', () => {
-      expect(online.buildNewPagesOrigin('beta.plaud.ai')).toBe('https://beta.plaud-web.pages.dev');
-      expect(online.buildNewPagesOrigin('app.plaud.ai')).toBe('https://app.plaud-web.pages.dev');
+      expect(online.buildNewPagesOrigin('beta.plaud.ai')).toBe('https://plaud-web3.pages.dev');
+      expect(online.buildNewPagesOrigin('app.plaud.ai')).toBe('https://plaud-web3.pages.dev');
     });
 
-    it('应该处理根域名 plaud.ai', () => {
-      expect(online.buildNewPagesOrigin('plaud.ai')).toBe('https://plaud.ai');
-    });
-
-    it('应该处理白名单域名', () => {
-      expect(online.buildNewPagesOrigin('api.plaud.ai')).toBe('https://api.plaud.ai');
-      expect(online.buildNewPagesOrigin('www.plaud.ai')).toBe('https://www.plaud.ai');
-    });
-
-    it('应该处理复杂子域名', () => {
-      expect(online.buildNewPagesOrigin('admin.api.plaud.ai')).toBe('https://plaud-web.pages.dev');
+    it('应该统一映射到新版本域名', () => {
+      expect(online.buildNewPagesOrigin('beta.plaud.ai')).toBe('https://plaud-web3.pages.dev');
+      expect(online.buildNewPagesOrigin('app.plaud.ai')).toBe('https://plaud-web3.pages.dev');
+      expect(online.buildNewPagesOrigin('api.plaud.ai')).toBe('https://plaud-web3.pages.dev');
+      expect(online.buildNewPagesOrigin('plaud.ai')).toBe('https://plaud-web3.pages.dev');
+      expect(online.buildNewPagesOrigin('admin.api.plaud.ai')).toBe('https://plaud-web3.pages.dev');
     });
   });
 
   describe('在线路由逻辑测试 - beta.plaud.ai 域名', () => {
-    const baseUrl = 'https://beta.plaud.ai/dashboard';
+    const baseUrl = new URL('https://beta.plaud.ai/dashboard');
 
-    it('在线环境默认0%灰度 - 所有用户使用旧版本', () => {
-      const result = testOnlineRouting(baseUrl, {
-        cookieHeader: 'x-pld-tag=beta_user789', // hash: 34%
-        // 不设置 grayPercentage，默认为 0
+    it('在线环境默认100%灰度 - 所有用户使用新版本', () => {
+      const cookieHeader = 'x-pld-tag=beta_user789'; // hash: 34%
+      const targetHostname = online.processRouting({
+        inUrl: baseUrl,
+        cookieHeader,
+        grayPercentage: 100, // 默认100%
+        alwaysOldRoutes: '',
       });
 
-      expect(result.useNewVersion).toBe(false);
-      expect(result.hash).toBe(34);
-      expect(result.grayPercentage).toBe(0);
-      expect(result.targetHostname).toBe('plaud-web.pages.dev');
-      expect(result.targetUrl).toBe('https://plaud-web.pages.dev/dashboard');
+      expect(targetHostname).toBe('plaud-web3.pages.dev');
     });
 
-    it('在线环境10%灰度 - 低哈希用户命中新版本', () => {
-      const result = testOnlineRouting(baseUrl, {
-        cookieHeader: 'x-pld-tag=beta_user789', // hash: 34% > 10%
+    it('在线环境10%灰度 - 高哈希用户不命中新版本', () => {
+      const cookieHeader = 'x-pld-tag=beta_user789'; // hash: 34% > 10%
+      const targetHostname = online.processRouting({
+        inUrl: baseUrl,
+        cookieHeader,
         grayPercentage: 10,
+        alwaysOldRoutes: '',
       });
 
-      expect(result.useNewVersion).toBe(false); // 34% > 10%
-      expect(result.targetHostname).toBe('plaud-web.pages.dev');
+      expect(targetHostname).toBe('plaud-web-dist.pages.dev'); // 34% > 10%，不命中新版本
     });
 
     it('在线环境40%灰度 - 低哈希用户命中新版本', () => {
-      const result = testOnlineRouting(baseUrl, {
-        cookieHeader: 'x-pld-tag=beta_user789', // hash: 34% < 40%
+      const cookieHeader = 'x-pld-tag=beta_user789'; // hash: 34% < 40%
+      const targetHostname = online.processRouting({
+        inUrl: baseUrl,
+        cookieHeader,
         grayPercentage: 40,
+        alwaysOldRoutes: '',
       });
 
-      expect(result.useNewVersion).toBe(true);
-      expect(result.targetHostname).toBe('beta.plaud-web.pages.dev');
-      expect(result.targetUrl).toBe('https://beta.plaud-web.pages.dev/dashboard');
+      expect(targetHostname).toBe('plaud-web3.pages.dev'); // 34% < 40%，命中新版本
     });
 
-    it('环境头应该优先于灰度逻辑', () => {
-      const result = testOnlineRouting(baseUrl, {
-        cookieHeader: 'x-pld-tag=beta_user123', // hash: 76%
-        headerEnv: 'staging',
-        grayPercentage: 0,
-      });
-
-      expect(result.targetHostname).toBe('staging.plaud-web.pages.dev');
-      expect(result.targetUrl).toBe('https://staging.plaud-web.pages.dev/dashboard');
-    });
-
-    it('没有客户端标签应该默认旧版本', () => {
-      const result = testOnlineRouting(baseUrl, {
-        cookieHeader: 'session=abc',
+    it('没有客户端标签应该默认新版本 - 50%灰度', () => {
+      const cookieHeader = 'session=abc';
+      const targetHostname = online.processRouting({
+        inUrl: baseUrl,
+        cookieHeader,
         grayPercentage: 50,
+        alwaysOldRoutes: '',
       });
 
-      expect(result.useNewVersion).toBe(false);
-      expect(result.clientTag).toBeUndefined();
-      expect(result.hash).toBeNull();
-      expect(result.targetHostname).toBe('plaud-web.pages.dev');
+      expect(targetHostname).toBe('plaud-web3.pages.dev');
+    });
+
+    it('没有客户端标签应该默认新版本 - 0%灰度', () => {
+      const cookieHeader = 'session=xyz';
+      const targetHostname = online.processRouting({
+        inUrl: baseUrl,
+        cookieHeader,
+        grayPercentage: 0,
+        alwaysOldRoutes: '',
+      });
+
+      expect(targetHostname).toBe('plaud-web3.pages.dev'); // 没有用户标识时默认新版本
+    });
+
+    it('没有客户端标签应该默认新版本 - 100%灰度', () => {
+      const cookieHeader = 'other=value';
+      const targetHostname = online.processRouting({
+        inUrl: baseUrl,
+        cookieHeader,
+        grayPercentage: 100,
+        alwaysOldRoutes: '',
+      });
+
+      expect(targetHostname).toBe('plaud-web3.pages.dev');
+    });
+
+    it('空Cookie头应该默认新版本', () => {
+      const cookieHeader = '';
+      const targetHostname = online.processRouting({
+        inUrl: baseUrl,
+        cookieHeader,
+        grayPercentage: 30,
+        alwaysOldRoutes: '',
+      });
+
+      expect(targetHostname).toBe('plaud-web3.pages.dev');
+    });
+
+    it('只有其他Cookie没有x-pld-tag应该默认新版本', () => {
+      const cookieHeader = 'sessionId=abc123; userId=456; theme=dark';
+      const targetHostname = online.processRouting({
+        inUrl: baseUrl,
+        cookieHeader,
+        grayPercentage: 25,
+        alwaysOldRoutes: '',
+      });
+
+      expect(targetHostname).toBe('plaud-web3.pages.dev');
+    });
+
+    it('x-pld-tag为空值应该默认新版本', () => {
+      const cookieHeader = 'x-pld-tag=; session=abc';
+      const targetHostname = online.processRouting({
+        inUrl: baseUrl,
+        cookieHeader,
+        grayPercentage: 10,
+        alwaysOldRoutes: '',
+      });
+
+      expect(targetHostname).toBe('plaud-web3.pages.dev');
+    });
+
+    it('在线环境5%灰度 - 极低哈希用户才命中新版本', () => {
+      // 使用 user789 (hash: 15%) 测试低哈希用户
+      const cookieHeader = 'x-pld-tag=user789'; // hash: 15% > 5%
+      const targetHostname = online.processRouting({
+        inUrl: baseUrl,
+        cookieHeader,
+        grayPercentage: 5,
+        alwaysOldRoutes: '',
+      });
+
+      expect(targetHostname).toBe('plaud-web-dist.pages.dev'); // 15% > 5%，不命中新版本
+    });
+
+    it('在线环境20%灰度 - 低哈希用户命中新版本', () => {
+      // 使用 user789 (hash: 15%) 测试低哈希用户
+      const cookieHeader = 'x-pld-tag=user789'; // hash: 15% < 20%
+      const targetHostname = online.processRouting({
+        inUrl: baseUrl,
+        cookieHeader,
+        grayPercentage: 20,
+        alwaysOldRoutes: '',
+      });
+
+      expect(targetHostname).toBe('plaud-web3.pages.dev'); // 15% < 20%，命中新版本
+    });
+
+    it('在线环境75%灰度 - 中等哈希用户命中新版本', () => {
+      // 使用 user123 (hash: 73%) 测试中等哈希用户
+      const cookieHeader = 'x-pld-tag=user123'; // hash: 73% < 75%
+      const targetHostname = online.processRouting({
+        inUrl: baseUrl,
+        cookieHeader,
+        grayPercentage: 75,
+        alwaysOldRoutes: '',
+      });
+
+      expect(targetHostname).toBe('plaud-web3.pages.dev'); // 73% < 75%，命中新版本
+    });
+
+    it('在线环境70%灰度 - 高哈希用户不命中新版本', () => {
+      // 使用 beta_user123 (hash: 76%) 测试高哈希用户
+      const cookieHeader = 'x-pld-tag=beta_user123'; // hash: 76% > 70%
+      const targetHostname = online.processRouting({
+        inUrl: baseUrl,
+        cookieHeader,
+        grayPercentage: 70,
+        alwaysOldRoutes: '',
+      });
+
+      expect(targetHostname).toBe('plaud-web-dist.pages.dev'); // 76% > 70%，不命中新版本
     });
   });
 
   describe('在线域名映射测试 - beta.plaud.ai 环境', () => {
-    it('访问 beta.plaud.ai 应该返回 beta.plaud-web.pages.dev', () => {
-      const result = testOnlineRouting('https://beta.plaud.ai/dashboard', {
-        cookieHeader: 'x-pld-tag=beta_user789', // hash: 34%
+    it('访问 beta.plaud.ai 应该返回 plaud-web3.pages.dev', () => {
+      const inUrl = new URL('https://beta.plaud.ai/dashboard');
+      const cookieHeader = 'x-pld-tag=beta_user789'; // hash: 34%
+      const targetHostname = online.processRouting({
+        inUrl,
+        cookieHeader,
         grayPercentage: 40, // 命中新版本
+        alwaysOldRoutes: '',
       });
 
-      expect(result.targetHostname).toBe('beta.plaud-web.pages.dev');
-      expect(result.targetUrl).toBe('https://beta.plaud-web.pages.dev/dashboard');
+      expect(targetHostname).toBe('plaud-web3.pages.dev');
     });
 
-    it('访问 app.plaud.ai 应该返回 app.plaud-web.pages.dev', () => {
-      const result = testOnlineRouting('https://app.plaud.ai/profile', {
-        cookieHeader: 'x-pld-tag=beta_user789', // hash: 34%
+    it('访问 app.plaud.ai 应该返回 plaud-web3.pages.dev', () => {
+      const inUrl = new URL('https://app.plaud.ai/profile');
+      const cookieHeader = 'x-pld-tag=beta_user789'; // hash: 34%
+      const targetHostname = online.processRouting({
+        inUrl,
+        cookieHeader,
         grayPercentage: 40, // 命中新版本
+        alwaysOldRoutes: '',
       });
 
-      expect(result.targetHostname).toBe('app.plaud-web.pages.dev');
-      expect(result.targetUrl).toBe('https://app.plaud-web.pages.dev/profile');
-    });
-
-    it('访问 api.plaud.ai 白名单域名保持原样', () => {
-      const result = testOnlineRouting('https://api.plaud.ai/v1/users', {
-        cookieHeader: 'x-pld-tag=beta_user456', // hash: 94%
-        headerEnv: 'staging', // 环境头对白名单域名无效
-        grayPercentage: 50,
-      });
-
-      expect(result.targetHostname).toBe('api.plaud.ai');
-      expect(result.targetUrl).toBe('https://api.plaud.ai/v1/users');
-    });
-
-    it('访问根域名 plaud.ai 白名单域名保持原样', () => {
-      const result = testOnlineRouting('https://plaud.ai/home', {
-        cookieHeader: 'x-pld-tag=beta_user789', // hash: 15%
-        grayPercentage: 50,
-      });
-
-      expect(result.targetHostname).toBe('plaud.ai');
-      expect(result.targetUrl).toBe('https://plaud.ai/home');
-    });
-
-    it('访问 www.plaud.ai 白名单域名保持原样', () => {
-      const result = testOnlineRouting('https://www.plaud.ai/about', {
-        cookieHeader: 'session=abc123', // 无 x-pld-tag
-        headerEnv: 'prod', // 环境头对白名单域名无效
-        grayPercentage: 50,
-      });
-
-      expect(result.targetHostname).toBe('www.plaud.ai');
-      expect(result.targetUrl).toBe('https://www.plaud.ai/about');
+      expect(targetHostname).toBe('plaud-web3.pages.dev');
     });
 
     it('高哈希用户访问 beta.plaud.ai 应该返回旧版本域名', () => {
-      const result = testOnlineRouting('https://beta.plaud.ai/dashboard', {
-        cookieHeader: 'x-pld-tag=beta_user123', // hash: 73%
+      const inUrl = new URL('https://beta.plaud.ai/dashboard');
+      const cookieHeader = 'x-pld-tag=beta_user123'; // hash: 76%
+      const targetHostname = online.processRouting({
+        inUrl,
+        cookieHeader,
         grayPercentage: 50, // 不命中新版本
+        alwaysOldRoutes: '',
       });
 
-      expect(result.targetHostname).toBe('plaud-web.pages.dev');
-      expect(result.targetUrl).toBe('https://plaud-web.pages.dev/dashboard');
-      expect(result.useNewVersion).toBe(false);
-    });
-
-    it('环境头优先级测试 - 即使是旧版本用户也会路由到指定环境', () => {
-      const result = testOnlineRouting('https://beta.plaud.ai/health', {
-        cookieHeader: 'x-pld-tag=beta_user123', // hash: 73%
-        headerEnv: 'dev',
-        grayPercentage: 50,
-      });
-
-      expect(result.targetHostname).toBe('dev.plaud-web.pages.dev');
-      expect(result.targetUrl).toBe('https://dev.plaud-web.pages.dev/health');
+      expect(targetHostname).toBe('plaud-web-dist.pages.dev');
     });
 
     it('复杂子域名测试 - admin.api.plaud.ai', () => {
-      const result = testOnlineRouting('https://admin.api.plaud.ai/console', {
-        cookieHeader: 'x-pld-tag=admin', // hash: 需要计算
+      const inUrl = new URL('https://admin.api.plaud.ai/console');
+      const cookieHeader = 'x-pld-tag=admin'; // hash: 需要计算
+      const targetHostname = online.processRouting({
+        inUrl,
+        cookieHeader,
         grayPercentage: 100, // 100% 灰度，所有用户新版本
+        alwaysOldRoutes: '',
       });
 
-      // admin.api.plaud.ai 是复杂子域名，应该兜底到默认
-      expect(result.targetHostname).toBe('plaud-web.pages.dev');
-      expect(result.targetUrl).toBe('https://plaud-web.pages.dev/console');
+      // admin.api.plaud.ai 是复杂子域名，应该兜底到默认新版本
+      expect(targetHostname).toBe('plaud-web3.pages.dev');
     });
 
     it('带查询参数的URL应该保持参数', () => {
-      const result = testOnlineRouting('https://beta.plaud.ai/search?q=test&page=1', {
-        cookieHeader: 'x-pld-tag=beta_user789',
-        headerEnv: 'staging',
+      const inUrl = new URL('https://beta.plaud.ai/search?q=test&page=1');
+      const cookieHeader = 'x-pld-tag=beta_user789';
+      const targetHostname = online.processRouting({
+        inUrl,
+        cookieHeader,
         grayPercentage: 50,
+        alwaysOldRoutes: '',
       });
 
-      expect(result.targetHostname).toBe('staging.plaud-web.pages.dev');
-      expect(result.targetUrl).toBe('https://staging.plaud-web.pages.dev/search?q=test&page=1');
+      expect(targetHostname).toBe('plaud-web3.pages.dev');
+      // URL 参数保持应该由调用方处理
     });
 
-    it('白名单域名测试 - 环境头对白名单域名无效', () => {
-      const result = testOnlineRouting('https://api.plaud.ai/health', {
-        cookieHeader: 'x-pld-tag=beta_user789',
-        headerEnv: 'staging', // 环境头应该被忽略
-        grayPercentage: 50,
+    it('没有用户标识访问 beta.plaud.ai 应该返回新版本域名', () => {
+      const inUrl = new URL('https://beta.plaud.ai/dashboard');
+      const cookieHeader = 'session=anonymous';
+      const targetHostname = online.processRouting({
+        inUrl,
+        cookieHeader,
+        grayPercentage: 20, // 即使低灰度，没有用户标识也返回新版本
+        alwaysOldRoutes: '',
       });
 
-      expect(result.targetHostname).toBe('api.plaud.ai'); // 保持原域名
-      expect(result.targetUrl).toBe('https://api.plaud.ai/health');
+      expect(targetHostname).toBe('plaud-web3.pages.dev');
+    });
+
+    it('没有用户标识访问 app.plaud.ai 应该返回新版本域名', () => {
+      const inUrl = new URL('https://app.plaud.ai/profile');
+      const cookieHeader = ''; // 空 cookie
+      const targetHostname = online.processRouting({
+        inUrl,
+        cookieHeader,
+        grayPercentage: 5, // 极低灰度，但没有用户标识仍返回新版本
+        alwaysOldRoutes: '',
+      });
+
+      expect(targetHostname).toBe('plaud-web3.pages.dev');
     });
   });
 
   describe('在线灰度发布场景测试', () => {
     it('0%灰度 - 所有用户都使用旧版本', () => {
       const users = ['beta_user_a', 'beta_user_b', 'beta_user_c'];
+      const inUrl = new URL('https://beta.plaud.ai/test');
 
       users.forEach(user => {
-        const result = testOnlineRouting('https://beta.plaud.ai/test', {
+        const targetHostname = online.processRouting({
+          inUrl,
           cookieHeader: `x-pld-tag=${user}`,
           grayPercentage: 0,
+          alwaysOldRoutes: '',
         });
 
-        expect(result.useNewVersion).toBe(false);
-        expect(result.targetHostname).toBe('plaud-web.pages.dev');
+        expect(targetHostname).toBe('plaud-web-dist.pages.dev');
       });
     });
 
     it('5%灰度 - 极少数用户命中新版本', () => {
-      const result = testOnlineRouting('https://beta.plaud.ai/test', {
-        cookieHeader: 'x-pld-tag=beta_low_hash', // 需要找到低哈希值的用户
+      const inUrl = new URL('https://beta.plaud.ai/test');
+      const cookieHeader = 'x-pld-tag=beta_low_hash'; // 需要找到低哈希值的用户
+      const targetHostname = online.processRouting({
+        inUrl,
+        cookieHeader,
         grayPercentage: 5,
+        alwaysOldRoutes: '',
       });
 
       // 验证哈希计算逻辑
-      expect(result.hash).toBeGreaterThanOrEqual(0);
-      expect(result.hash).toBeLessThan(100);
-      expect(result.useNewVersion).toBe(result.hash! < 5);
+      const cookies = online.parseCookies(cookieHeader);
+      const clientTag = cookies['x-pld-tag'];
+      const hash = online.hashStringToPercentage(clientTag);
+      const useNewVersion = hash < 5;
+
+      expect(hash).toBeGreaterThanOrEqual(0);
+      expect(hash).toBeLessThan(100);
+
+      if (useNewVersion) {
+        expect(targetHostname).toBe('plaud-web3.pages.dev');
+      } else {
+        expect(targetHostname).toBe('plaud-web-dist.pages.dev');
+      }
     });
 
     it('50%灰度 - 约一半用户命中新版本', () => {
       const users = ['beta_user_1', 'beta_user_2', 'beta_user_3', 'beta_user_4', 'beta_user_5'];
-      const results = users.map(user => {
-        return testOnlineRouting('https://beta.plaud.ai/test', {
+      const inUrl = new URL('https://beta.plaud.ai/test');
+
+      users.forEach(user => {
+        const targetHostname = online.processRouting({
+          inUrl,
           cookieHeader: `x-pld-tag=${user}`,
           grayPercentage: 50,
+          alwaysOldRoutes: '',
         });
-      });
 
-      // 验证每个用户的哈希值是确定的
-      results.forEach(result => {
-        expect(result.hash).toBeGreaterThanOrEqual(0);
-        expect(result.hash).toBeLessThan(100);
-        expect(result.useNewVersion).toBe(result.hash! < 50);
+        // 验证每个用户的哈希值是确定的
+        const hash = online.hashStringToPercentage(user);
+        expect(hash).toBeGreaterThanOrEqual(0);
+        expect(hash).toBeLessThan(100);
 
-        if (result.useNewVersion) {
-          expect(result.targetHostname).toBe('beta.plaud-web.pages.dev');
+        const useNewVersion = hash < 50;
+        if (useNewVersion) {
+          expect(targetHostname).toBe('plaud-web3.pages.dev');
         } else {
-          expect(result.targetHostname).toBe('plaud-web.pages.dev');
+          expect(targetHostname).toBe('plaud-web-dist.pages.dev');
         }
       });
     });
 
     it('100%灰度 - 所有用户都使用新版本', () => {
       const users = ['beta_user_x', 'beta_user_y', 'beta_user_z'];
+      const inUrl = new URL('https://beta.plaud.ai/test');
 
       users.forEach(user => {
-        const result = testOnlineRouting('https://beta.plaud.ai/test', {
+        const targetHostname = online.processRouting({
+          inUrl,
           cookieHeader: `x-pld-tag=${user}`,
           grayPercentage: 100,
+          alwaysOldRoutes: '',
         });
 
-        expect(result.useNewVersion).toBe(true);
-        expect(result.targetHostname).toBe('beta.plaud-web.pages.dev');
+        expect(targetHostname).toBe('plaud-web3.pages.dev');
       });
     });
 
     it('在线渐进式发布模拟 - 从0%到100%', () => {
       const testUser = 'beta_consistent_user';
       const grayPercentages = [0, 5, 10, 30, 50, 80, 100];
+      const inUrl = new URL('https://beta.plaud.ai/rollout');
+
       const results = grayPercentages.map(grayPercentage => {
-        return testOnlineRouting('https://beta.plaud.ai/rollout', {
+        const targetHostname = online.processRouting({
+          inUrl,
           cookieHeader: `x-pld-tag=${testUser}`,
           grayPercentage,
+          alwaysOldRoutes: '',
         });
+        return { grayPercentage, targetHostname };
       });
 
       // 验证用户哈希值保持一致
-      const userHash = results[0].hash;
-      results.forEach(result => {
-        expect(result.hash).toBe(userHash);
-      });
+      const userHash = online.hashStringToPercentage(testUser);
 
       // 验证灰度逻辑：一旦用户命中某个灰度，更高的灰度也应该命中
       let hasHitNewVersion = false;
       results.forEach(result => {
-        if (result.useNewVersion) {
+        const useNewVersion = userHash < result.grayPercentage;
+        if (useNewVersion) {
           hasHitNewVersion = true;
+          expect(result.targetHostname).toBe('plaud-web3.pages.dev');
+        } else {
+          expect(result.targetHostname).toBe('plaud-web-dist.pages.dev');
         }
+
         // 一旦命中新版本，后续更高的灰度也应该命中
-        if (hasHitNewVersion && result.grayPercentage >= userHash!) {
-          expect(result.useNewVersion).toBe(true);
+        if (hasHitNewVersion && result.grayPercentage >= userHash) {
+          expect(result.targetHostname).toBe('plaud-web3.pages.dev');
         }
       });
 
       // 100% 灰度时，所有用户都应该是新版本
       const finalResult = results[results.length - 1];
       expect(finalResult.grayPercentage).toBe(100);
-      expect(finalResult.useNewVersion).toBe(true);
-      expect(finalResult.targetHostname).toBe('beta.plaud-web.pages.dev');
+      expect(finalResult.targetHostname).toBe('plaud-web3.pages.dev');
+    });
+
+    it('没有用户标识在各种灰度下都使用新版本', () => {
+      const grayPercentages = [0, 5, 10, 30, 50, 80, 100];
+      const inUrl = new URL('https://beta.plaud.ai/no-user-test');
+
+      grayPercentages.forEach(grayPercentage => {
+        // 测试完全没有 cookie
+        let targetHostname = online.processRouting({
+          inUrl,
+          cookieHeader: '',
+          grayPercentage,
+          alwaysOldRoutes: '',
+        });
+        expect(targetHostname).toBe('plaud-web3.pages.dev');
+
+        // 测试有其他 cookie 但没有 x-pld-tag
+        targetHostname = online.processRouting({
+          inUrl,
+          cookieHeader: 'session=test; theme=light',
+          grayPercentage,
+          alwaysOldRoutes: '',
+        });
+        expect(targetHostname).toBe('plaud-web3.pages.dev');
+
+        // 测试 x-pld-tag 为空
+        targetHostname = online.processRouting({
+          inUrl,
+          cookieHeader: 'x-pld-tag=; other=value',
+          grayPercentage,
+          alwaysOldRoutes: '',
+        });
+        expect(targetHostname).toBe('plaud-web3.pages.dev');
+      });
     });
   });
 
   describe('在线环境特殊场景测试', () => {
     it('旧路由强制使用旧版本', () => {
-      const result = testOnlineRouting('https://beta.plaud.ai/legacy/admin', {
-        cookieHeader: 'x-pld-tag=beta_user789', // hash: 15%
+      const inUrl = new URL('https://beta.plaud.ai/legacy/admin');
+      const cookieHeader = 'x-pld-tag=beta_user789'; // hash: 34%
+      const targetHostname = online.processRouting({
+        inUrl,
+        cookieHeader,
         grayPercentage: 50, // 应该命中新版本
         alwaysOldRoutes: '/legacy,/old-api',
       });
 
       // 即使哈希值低，但因为是旧路由，所以使用旧版本
-      expect(result.useNewVersion).toBe(true); // 哈希逻辑仍然是新版本
-      expect(result.targetHostname).toBe('plaud-web.pages.dev'); // 但路由到旧版本
-      expect(result.targetUrl).toBe('https://plaud-web.pages.dev/legacy/admin');
+      expect(targetHostname).toBe('plaud-web-dist.pages.dev');
     });
 
-    it('环境头与灰度的优先级 - 环境头覆盖灰度逻辑', () => {
-      const result = testOnlineRouting('https://beta.plaud.ai/override', {
-        cookieHeader: 'x-pld-tag=beta_user123', // hash: 73% (应该是旧版本)
-        headerEnv: 'staging', // 环境头应该覆盖灰度逻辑
+    it('高哈希用户在低灰度下应该使用旧版本', () => {
+      const inUrl = new URL('https://beta.plaud.ai/override');
+      const cookieHeader = 'x-pld-tag=beta_user123'; // hash: 76% (应该是旧版本)
+      const targetHostname = online.processRouting({
+        inUrl,
+        cookieHeader,
         grayPercentage: 20, // 20% 灰度，用户应该不命中
+        alwaysOldRoutes: '',
       });
 
-      expect(result.useNewVersion).toBe(false); // 基于哈希值的逻辑判断
-      expect(result.targetHostname).toBe('staging.plaud-web.pages.dev'); // 但实际路由被环境头覆盖
-      expect(result.hash).toBe(76);
-      expect(result.grayPercentage).toBe(20);
+      expect(targetHostname).toBe('plaud-web-dist.pages.dev'); // 路由到旧版本
+    });
+
+    it('没有用户标识访问旧路由应该使用旧版本', () => {
+      const inUrl = new URL('https://beta.plaud.ai/legacy/settings');
+      const cookieHeader = 'session=anonymous'; // 没有 x-pld-tag
+      const targetHostname = online.processRouting({
+        inUrl,
+        cookieHeader,
+        grayPercentage: 100, // 即使100%灰度，旧路由仍然使用旧版本
+        alwaysOldRoutes: '/legacy,/old-api',
+      });
+
+      expect(targetHostname).toBe('plaud-web-dist.pages.dev'); // 旧路由优先级最高
     });
 
     it('应该正确处理复杂的 URL', () => {
-      const complexUrl = 'https://beta.plaud.ai/v1/users?id=123&type=admin&env=prod';
-      const result = testOnlineRouting(complexUrl, {
-        cookieHeader: 'x-pld-tag=beta_admin',
+      const complexUrl = new URL('https://beta.plaud.ai/v1/users?id=123&type=admin&env=prod');
+      const cookieHeader = 'x-pld-tag=beta_admin';
+      const targetHostname = online.processRouting({
+        inUrl: complexUrl,
+        cookieHeader,
         grayPercentage: 30,
+        alwaysOldRoutes: '',
       });
 
-      expect(result.originalUrl).toBe(complexUrl);
-      expect(result.path).toBe('/v1/users');
-      expect(result.targetUrl).toContain('?id=123&type=admin&env=prod'); // 查询参数应该保留
+      // 验证路由逻辑正常工作
+      expect(['plaud-web3.pages.dev', 'plaud-web-dist.pages.dev']).toContain(targetHostname);
     });
 
     it('应该返回完整的调试信息', () => {
-      const result = testOnlineRouting('https://beta.plaud.ai/debug', {
-        cookieHeader: 'x-pld-tag=beta_testuser',
+      const inUrl = new URL('https://beta.plaud.ai/debug');
+      const cookieHeader = 'x-pld-tag=beta_testuser';
+      const targetHostname = online.processRouting({
+        inUrl,
+        cookieHeader,
         grayPercentage: 25,
         alwaysOldRoutes: '/api,/legacy',
       });
 
-      expect(result).toHaveProperty('originalUrl');
-      expect(result).toHaveProperty('targetUrl');
-      expect(result).toHaveProperty('targetHostname');
-      expect(result).toHaveProperty('useNewVersion');
-      expect(result).toHaveProperty('clientTag');
-      expect(result).toHaveProperty('hash');
-      expect(result).toHaveProperty('grayPercentage');
-      expect(result).toHaveProperty('oldRoutes');
-      expect(result).toHaveProperty('originalHost');
-      expect(result).toHaveProperty('path');
+      // 验证返回的是有效的主机名
+      expect(typeof targetHostname).toBe('string');
+      expect(targetHostname.length).toBeGreaterThan(0);
+      expect(['plaud-web3.pages.dev', 'plaud-web-dist.pages.dev']).toContain(targetHostname);
     });
   });
 });

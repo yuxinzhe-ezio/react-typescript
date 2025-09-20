@@ -70,10 +70,10 @@ const generateOnlineTestReport = (): void => {
 ## 🌐 在线环境配置
 
 - **域名**: beta.plaud.ai (公测环境)
-- **默认资源**: plaud-web.pages.dev (旧版本)
-- **新版本资源**: beta.plaud-web.pages.dev
-- **默认灰度**: 0% (保守发布策略)
-- **白名单域名**: api.plaud.ai, www.plaud.ai, plaud.ai
+- **旧版本资源**: plaud-web-dist.pages.dev (旧项目)
+- **新版本资源**: plaud-web3.pages.dev (新项目)
+- **默认灰度**: 100% (升级策略)
+- **劫持域名**: beta.plaud.ai (固定劫持)
 
 ## 🎯 测试状态
 
@@ -110,15 +110,14 @@ apps/web-worker/
 
 ### 🎯 路由逻辑
 - **灰度发布**: 基于用户标识的哈希值进行流量分配
-- **环境路由**: 支持通过 x-pld-env header 指定目标环境
-- **域名映射**: beta.plaud.ai -> beta.plaud-web.pages.dev
-- **白名单机制**: API域名不做路由处理，保持原样
+- **域名映射**: beta.plaud.ai -> plaud-web3.pages.dev (新版本) / plaud-web-dist.pages.dev (旧版本)
+- **固定劫持**: 只处理 beta.plaud.ai/* 路径，统一映射到新版本域名
 
-### 🛡️ 安全策略
-- **保守发布**: 默认0%灰度，确保线上稳定性
-- **渐进式发布**: 支持从0%逐步扩大到100%
-- **回滚机制**: 可快速调整灰度百分比
-- **环境隔离**: 线上环境独立配置
+### 🛡️ 升级策略
+- **全面升级**: 默认100%灰度，全量使用新版本
+- **灵活控制**: 支持调整灰度百分比进行精细控制
+- **快速回滚**: 可快速调整灰度百分比进行回滚
+- **环境隔离**: 在线环境独立配置
 
 ### 🧪 测试覆盖
 - 哈希算法一致性测试
@@ -235,10 +234,10 @@ const generateOnlineDetailedResults = (testResults: JestTestResult): string => {
 
             // 解析在线测试用例信息
             let accessUrl = 'beta.plaud.ai/*';
-            let userTag = 'beta_user';
+            let userTag = '-'; // 默认为无用户标识
             let envHeader = '-';
             let grayPercentage = '0%';
-            let resultUrl = 'plaud-web.pages.dev';
+            let resultUrl = 'plaud-web3.pages.dev';
             let grayHit = '🌐 在线环境';
 
             // 根据测试标题解析具体参数
@@ -249,8 +248,17 @@ const generateOnlineDetailedResults = (testResults: JestTestResult): string => {
               accessUrl = 'beta.plaud.ai/dashboard';
               userTag = 'beta_user789';
               grayPercentage = '0%';
-              resultUrl = 'plaud-web.pages.dev';
+              resultUrl = 'plaud-web-dist.pages.dev';
               grayHit = '❌ 未命中 (34% > 0%)';
+            } else if (
+              test.title.includes('在线环境10%灰度') ||
+              test.title.includes('线上环境10%灰度')
+            ) {
+              accessUrl = 'beta.plaud.ai/dashboard';
+              userTag = 'beta_user789';
+              grayPercentage = '10%';
+              resultUrl = 'plaud-web-dist.pages.dev';
+              grayHit = '❌ 未命中 (34% > 10%)';
             } else if (
               test.title.includes('在线环境40%灰度') ||
               test.title.includes('线上环境40%灰度')
@@ -258,20 +266,74 @@ const generateOnlineDetailedResults = (testResults: JestTestResult): string => {
               accessUrl = 'beta.plaud.ai/dashboard';
               userTag = 'beta_user789';
               grayPercentage = '40%';
-              resultUrl = 'beta.plaud-web.pages.dev';
+              resultUrl = 'plaud-web3.pages.dev';
               grayHit = '✅ 命中 (34% < 40%)';
-            } else if (test.title.includes('访问 beta.plaud.ai')) {
+            } else if (
+              test.title.includes('在线环境5%灰度') ||
+              test.title.includes('线上环境5%灰度')
+            ) {
+              accessUrl = 'beta.plaud.ai/dashboard';
+              userTag = 'user789';
+              grayPercentage = '5%';
+              resultUrl = 'plaud-web-dist.pages.dev';
+              grayHit = '❌ 未命中 (15% > 5%)';
+            } else if (
+              test.title.includes('在线环境20%灰度') ||
+              test.title.includes('线上环境20%灰度')
+            ) {
+              accessUrl = 'beta.plaud.ai/dashboard';
+              userTag = 'user789';
+              grayPercentage = '20%';
+              resultUrl = 'plaud-web3.pages.dev';
+              grayHit = '✅ 命中 (15% < 20%)';
+            } else if (
+              test.title.includes('在线环境75%灰度') ||
+              test.title.includes('线上环境75%灰度')
+            ) {
+              accessUrl = 'beta.plaud.ai/dashboard';
+              userTag = 'user123';
+              grayPercentage = '75%';
+              resultUrl = 'plaud-web3.pages.dev';
+              grayHit = '✅ 命中 (73% < 75%)';
+            } else if (
+              test.title.includes('在线环境70%灰度') ||
+              test.title.includes('线上环境70%灰度')
+            ) {
+              accessUrl = 'beta.plaud.ai/dashboard';
+              userTag = 'beta_user123';
+              grayPercentage = '70%';
+              resultUrl = 'plaud-web-dist.pages.dev';
+              grayHit = '❌ 未命中 (76% > 70%)';
+            } else if (
+              test.title.includes('访问 beta.plaud.ai') &&
+              !test.title.includes('没有用户标识')
+            ) {
               accessUrl = 'beta.plaud.ai/dashboard';
               userTag = 'beta_user789';
               grayPercentage = '40%';
-              resultUrl = 'beta.plaud-web.pages.dev';
+              resultUrl = 'plaud-web3.pages.dev';
               grayHit = '✅ 命中 (34% < 40%)';
-            } else if (test.title.includes('访问 app.plaud.ai')) {
+            } else if (
+              test.title.includes('访问 app.plaud.ai') &&
+              !test.title.includes('没有用户标识')
+            ) {
               accessUrl = 'app.plaud.ai/profile';
               userTag = 'beta_user789';
               grayPercentage = '40%';
-              resultUrl = 'app.plaud-web.pages.dev';
+              resultUrl = 'plaud-web3.pages.dev';
               grayHit = '✅ 命中 (34% < 40%)';
+            } else if (test.title.includes('高哈希用户')) {
+              accessUrl = 'beta.plaud.ai/dashboard';
+              userTag = 'beta_user123';
+              grayPercentage = '50%';
+              resultUrl = 'plaud-web-dist.pages.dev';
+              grayHit = '❌ 未命中 (76% > 50%)';
+            } else if (test.title.includes('旧路由强制使用旧版本')) {
+              accessUrl = 'beta.plaud.ai/legacy/admin';
+              userTag = 'beta_user789';
+              grayPercentage = '50%';
+              resultUrl = 'plaud-web-dist.pages.dev';
+              grayHit = '🔄 旧路由优先';
             } else if (test.title.includes('访问 api.plaud.ai')) {
               accessUrl = 'api.plaud.ai/v1/users';
               userTag = 'beta_user456';
@@ -297,25 +359,74 @@ const generateOnlineDetailedResults = (testResults: JestTestResult): string => {
               userTag = 'beta_user123';
               envHeader = 'staging';
               grayPercentage = '0%';
-              resultUrl = 'staging.plaud-web.pages.dev';
+              resultUrl = 'staging.plaud-web3.pages.dev';
               grayHit = '🔄 环境头优先';
-            } else if (test.title.includes('没有客户端标签应该默认旧版本')) {
+            } else if (test.title.includes('没有客户端标签应该默认新版本')) {
               accessUrl = 'beta.plaud.ai/dashboard';
-              userTag = '无';
-              grayPercentage = '50%';
-              resultUrl = 'plaud-web.pages.dev';
-              grayHit = '❌ 默认旧版本';
+              userTag = '-';
+              if (test.title.includes('50%灰度')) {
+                grayPercentage = '50%';
+              } else if (test.title.includes('0%灰度')) {
+                grayPercentage = '0%';
+              } else if (test.title.includes('100%灰度')) {
+                grayPercentage = '100%';
+              }
+              resultUrl = 'plaud-web3.pages.dev';
+              grayHit = '✅ 默认新版本';
+            } else if (test.title.includes('空Cookie头应该默认新版本')) {
+              accessUrl = 'beta.plaud.ai/dashboard';
+              userTag = '-';
+              grayPercentage = '30%';
+              resultUrl = 'plaud-web3.pages.dev';
+              grayHit = '✅ 默认新版本';
+            } else if (test.title.includes('只有其他Cookie没有x-pld-tag应该默认新版本')) {
+              accessUrl = 'beta.plaud.ai/dashboard';
+              userTag = '-';
+              grayPercentage = '25%';
+              resultUrl = 'plaud-web3.pages.dev';
+              grayHit = '✅ 默认新版本';
+            } else if (test.title.includes('x-pld-tag为空值应该默认新版本')) {
+              accessUrl = 'beta.plaud.ai/dashboard';
+              userTag = '-';
+              grayPercentage = '10%';
+              resultUrl = 'plaud-web3.pages.dev';
+              grayHit = '✅ 默认新版本';
+            } else if (
+              test.title.includes('没有用户标识访问') &&
+              test.title.includes('应该返回新版本域名')
+            ) {
+              if (test.title.includes('beta.plaud.ai')) {
+                accessUrl = 'beta.plaud.ai/dashboard';
+              } else if (test.title.includes('app.plaud.ai')) {
+                accessUrl = 'app.plaud.ai/profile';
+              }
+              userTag = '-';
+              grayPercentage = test.title.includes('20%') ? '20%' : '5%';
+              resultUrl = 'plaud-web3.pages.dev';
+              grayHit = '✅ 默认新版本';
+            } else if (test.title.includes('没有用户标识在各种灰度下都使用新版本')) {
+              accessUrl = 'beta.plaud.ai/no-user-test';
+              userTag = '-';
+              grayPercentage = '0%~100%';
+              resultUrl = 'plaud-web3.pages.dev';
+              grayHit = '✅ 全灰度新版本';
+            } else if (test.title.includes('没有用户标识访问旧路由应该使用旧版本')) {
+              accessUrl = 'beta.plaud.ai/legacy/settings';
+              userTag = '-';
+              grayPercentage = '100%';
+              resultUrl = 'plaud-web-dist.pages.dev';
+              grayHit = '🔄 旧路由优先';
             } else if (test.title.includes('0%灰度 - 所有用户都使用旧版本')) {
               accessUrl = 'beta.plaud.ai/test';
               userTag = 'beta_user_a~c';
               grayPercentage = '0%';
-              resultUrl = 'plaud-web.pages.dev';
+              resultUrl = 'plaud-web-dist.pages.dev';
               grayHit = '❌ 全部旧版本';
             } else if (test.title.includes('100%灰度 - 所有用户都使用新版本')) {
               accessUrl = 'beta.plaud.ai/test';
               userTag = 'beta_user_x~z';
               grayPercentage = '100%';
-              resultUrl = 'beta.plaud-web.pages.dev';
+              resultUrl = 'plaud-web3.pages.dev';
               grayHit = '✅ 全部新版本';
             } else if (
               test.title.includes('在线渐进式发布模拟') ||
