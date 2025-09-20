@@ -1,11 +1,12 @@
-# 🧪 Cloudflare Worker 路由逻辑测试报告
+# 🧪 Cloudflare Worker 离线环境测试报告 (Offline)
 
 ## 📊 测试概览
 
-**测试时间**: 2025/09/20 12:23:27
+**测试时间**: 2025/09/20 15:50:04
+**测试环境**: 离线环境 (theplaud.com)
 **测试文件**: 所有测试文件
-**总测试数**: 42
-**通过**: 42 ✅
+**总测试数**: 68
+**通过**: 68 ✅
 **失败**: 0 ❌
 **跳过**: 0 ⏭️
 **成功率**: 100.0%
@@ -15,6 +16,57 @@
 🎉 **所有测试通过！**
 
 ## 📋 详细结果
+
+### 📁 online-routing.test.ts
+
+#### Online Routing Logic (beta.plaud.ai 在线环境) › online.hashStringToPercentage - 在线环境哈希算法
+
+- ✅ **应该返回一致的哈希百分比** (3 assertions)
+- ✅ **相同字符串应该返回相同结果** (1 assertions)
+- ✅ **应该返回 0-99 范围内的值** (100 assertions)
+
+#### Online Routing Logic (beta.plaud.ai 在线环境) › buildNewPagesOrigin - 在线域名构建
+
+- ✅ **应该处理 beta.plaud.ai 子域名** (2 assertions)
+- ✅ **应该处理根域名 plaud.ai** (1 assertions)
+- ✅ **应该处理白名单域名** (2 assertions)
+- ✅ **应该处理复杂子域名** (1 assertions)
+
+#### Online Routing Logic (beta.plaud.ai 在线环境) › 在线路由逻辑测试 - beta.plaud.ai 域名
+
+- ✅ **在线环境默认0%灰度 - 所有用户使用旧版本** (5 assertions)
+- ✅ **在线环境10%灰度 - 低哈希用户命中新版本** (2 assertions)
+- ✅ **在线环境40%灰度 - 低哈希用户命中新版本** (3 assertions)
+- ✅ **环境头应该优先于灰度逻辑** (2 assertions)
+- ✅ **没有客户端标签应该默认旧版本** (4 assertions)
+
+#### Online Routing Logic (beta.plaud.ai 在线环境) › 在线域名映射测试 - beta.plaud.ai 环境
+
+- ✅ **访问 beta.plaud.ai 应该返回 beta.plaud-web.pages.dev** (2 assertions)
+- ✅ **访问 app.plaud.ai 应该返回 app.plaud-web.pages.dev** (2 assertions)
+- ✅ **访问 api.plaud.ai 白名单域名保持原样** (2 assertions)
+- ✅ **访问根域名 plaud.ai 白名单域名保持原样** (2 assertions)
+- ✅ **访问 www.plaud.ai 白名单域名保持原样** (2 assertions)
+- ✅ **高哈希用户访问 beta.plaud.ai 应该返回旧版本域名** (3 assertions)
+- ✅ **环境头优先级测试 - 即使是旧版本用户也会路由到指定环境** (2 assertions)
+- ✅ **复杂子域名测试 - admin.api.plaud.ai** (2 assertions)
+- ✅ **带查询参数的URL应该保持参数** (2 assertions)
+- ✅ **白名单域名测试 - 环境头对白名单域名无效** (2 assertions)
+
+#### Online Routing Logic (beta.plaud.ai 在线环境) › 在线灰度发布场景测试
+
+- ✅ **0%灰度 - 所有用户都使用旧版本** (6 assertions)
+- ✅ **5%灰度 - 极少数用户命中新版本** (3 assertions)
+- ✅ **50%灰度 - 约一半用户命中新版本** (20 assertions)
+- ✅ **100%灰度 - 所有用户都使用新版本** (6 assertions)
+- ✅ **在线渐进式发布模拟 - 从0%到100%** (14 assertions)
+
+#### Online Routing Logic (beta.plaud.ai 在线环境) › 在线环境特殊场景测试
+
+- ✅ **旧路由强制使用旧版本** (3 assertions)
+- ✅ **环境头与灰度的优先级 - 环境头覆盖灰度逻辑** (4 assertions)
+- ✅ **应该正确处理复杂的 URL** (3 assertions)
+- ✅ **应该返回完整的调试信息** (10 assertions)
 
 ### 📁 routing-logic.test.ts
 
@@ -74,19 +126,6 @@
 | app.theplaud.com/dashboard | 灰度与环境头的优先级 - 环境头覆盖灰度逻辑 | user123 | staging | 20% | staging.plaud-web3.pages.dev | 🔄 环境头优先 | ✅ | 4个 |
 | app.theplaud.com/dashboard | 灰度发布场景模拟 - 从10%逐步扩大到100% | consistent_user | - | 10%→100% | 渐进式命中 | 📈 渐进式发布 | ✅ | 10个 |
 
-### 📁 online.worker.test.ts
-
-#### Online Worker › handleOnlineRequest
-
-- ✅ **should handle successful request** (2 assertions)
-- ✅ **should handle HTTP errors** (1 assertions)
-- ✅ **should handle network errors** (1 assertions)
-- ✅ **should pass request options** (1 assertions)
-
-#### Online Worker › handleBatchRequests
-
-- ✅ **should handle multiple requests** (3 assertions)
-
 
 
 ## 📁 项目结构
@@ -94,26 +133,31 @@
 ```
 apps/web-worker/
 ├── src/
-│   ├── offline.worker.js          # 核心 Worker 逻辑
-│   ├── online.worker.js           # 在线 Worker 逻辑
-│   └── index.ts                   # 入口文件
+│   ├── offline.worker.js                    # 离线 Worker 逻辑 (theplaud.com)
+│   ├── online.worker.js                     # 在线 Worker 逻辑 (beta.plaud.ai)
+│   ├── shared-logic.js                      # 共享工具函数
+│   └── index.ts                             # 入口文件
 ├── tests/
-│   ├── routing-logic.test.ts      # 路由逻辑测试
-│   ├── online.worker.test.ts      # 在线功能测试
-│   └── test-utils.js              # 测试工具函数
+│   ├── routing-logic.test.ts                # 离线路由逻辑测试
+│   ├── online-routing.test.ts               # 在线路由逻辑测试
+│   └── test-utils.ts                        # 测试工具函数
 ├── scripts/
-│   └── generate-test-report.ts    # 测试报告生成器
+│   ├── generate-offline-test-report.ts      # 离线测试报告生成器
+│   └── generate-online-test-report.ts       # 在线测试报告生成器
+├── cloudflare-worker-offline.js             # 离线完整 Worker
+├── cloudflare-worker-online.js              # 在线完整 Worker
 └── reports/
-    └── latest-test-report.md      # 最新测试报告
+    ├── offline-test-report.md               # 离线测试报告
+    └── online-test-report.md                # 在线测试报告
 ```
 
-## 🔧 核心功能
+## 🔧 离线环境特性
 
 ### 🎯 路由逻辑
 - **灰度发布**: 基于用户标识的哈希值进行流量分配
-- **环境路由**: 支持通过 header 指定目标环境
-- **域名映射**: 自动将域名映射到对应的 Pages 部署
-- **白名单机制**: 特定域名不做路由处理，保持原样
+- **环境路由**: 支持通过 x-pld-env header 指定目标环境
+- **域名映射**: theplaud.com -> plaud-web3.pages.dev (新版本) / plaud-web-dist.pages.dev (旧版本)
+- **白名单机制**: api.theplaud.com, www.theplaud.com, theplaud.com 不做路由处理
 
 ### 🧪 测试覆盖
 - 哈希算法一致性测试
@@ -126,5 +170,5 @@ apps/web-worker/
 
 ---
 
-*报告生成时间: 2025/09/20 12:23:27*
-*测试框架: Jest | 项目: web-worker*
+*报告生成时间: 2025/09/20 15:50:04*
+*测试框架: Jest | 环境: 离线 (theplaud.com)*

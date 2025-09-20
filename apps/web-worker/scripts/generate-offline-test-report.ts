@@ -54,11 +54,12 @@ function generateTestReport(): void {
   }
 
   // 生成 Markdown 报告
-  const report = `# 🧪 Cloudflare Worker 路由逻辑测试报告
+  const report = `# 🧪 Cloudflare Worker 离线环境测试报告 (Offline)
 
 ## 📊 测试概览
 
 **测试时间**: ${timestamp}
+**测试环境**: 离线环境 (theplaud.com)
 **测试文件**: 所有测试文件
 **总测试数**: ${testResults.numTotalTests}
 **通过**: ${testResults.numPassedTests} ✅
@@ -79,26 +80,31 @@ ${generateDetailedResults(testResults)}
 \`\`\`
 apps/web-worker/
 ├── src/
-│   ├── offline.worker.js          # 核心 Worker 逻辑
-│   ├── online.worker.js           # 在线 Worker 逻辑
-│   └── index.ts                   # 入口文件
+│   ├── offline.worker.js                    # 离线 Worker 逻辑 (theplaud.com)
+│   ├── online.worker.js                     # 在线 Worker 逻辑 (beta.plaud.ai)
+│   ├── shared-logic.js                      # 共享工具函数
+│   └── index.ts                             # 入口文件
 ├── tests/
-│   ├── routing-logic.test.ts      # 路由逻辑测试
-│   ├── online.worker.test.ts      # 在线功能测试
-│   └── test-utils.js              # 测试工具函数
+│   ├── routing-logic.test.ts                # 离线路由逻辑测试
+│   ├── online-routing.test.ts               # 在线路由逻辑测试
+│   └── test-utils.ts                        # 测试工具函数
 ├── scripts/
-│   └── generate-test-report.ts    # 测试报告生成器
+│   ├── generate-offline-test-report.ts      # 离线测试报告生成器
+│   └── generate-online-test-report.ts       # 在线测试报告生成器
+├── cloudflare-worker-offline.js             # 离线完整 Worker
+├── cloudflare-worker-online.js              # 在线完整 Worker
 └── reports/
-    └── latest-test-report.md      # 最新测试报告
+    ├── offline-test-report.md               # 离线测试报告
+    └── online-test-report.md                # 在线测试报告
 \`\`\`
 
-## 🔧 核心功能
+## 🔧 离线环境特性
 
 ### 🎯 路由逻辑
 - **灰度发布**: 基于用户标识的哈希值进行流量分配
-- **环境路由**: 支持通过 header 指定目标环境
-- **域名映射**: 自动将域名映射到对应的 Pages 部署
-- **白名单机制**: 特定域名不做路由处理，保持原样
+- **环境路由**: 支持通过 x-pld-env header 指定目标环境
+- **域名映射**: theplaud.com -> plaud-web3.pages.dev (新版本) / plaud-web-dist.pages.dev (旧版本)
+- **白名单机制**: api.theplaud.com, www.theplaud.com, theplaud.com 不做路由处理
 
 ### 🧪 测试覆盖
 - 哈希算法一致性测试
@@ -112,7 +118,7 @@ apps/web-worker/
 ---
 
 *报告生成时间: ${timestamp}*
-*测试框架: Jest | 项目: web-worker*
+*测试框架: Jest | 环境: 离线 (theplaud.com)*
 `;
 
   // 确保 reports 目录存在
@@ -121,14 +127,14 @@ apps/web-worker/
     fs.mkdirSync(reportsDir, { recursive: true });
   }
 
-  // 只生成最新的报告文件（不带时间戳）
-  const latestReportPath = path.join(reportsDir, 'latest-test-report.md');
+  // 生成离线环境测试报告文件
+  const offlineReportPath = path.join(reportsDir, 'offline-test-report.md');
 
-  // 写入最新报告文件
-  fs.writeFileSync(latestReportPath, report, 'utf8');
+  // 写入离线报告文件
+  fs.writeFileSync(offlineReportPath, report, 'utf8');
 
-  console.log(`✅ 测试报告已生成:`);
-  console.log(`   📄 最新报告: ${latestReportPath}`);
+  console.log(`✅ 离线环境测试报告已生成:`);
+  console.log(`   📄 离线报告: ${offlineReportPath}`);
 }
 
 function generateDetailedResults(testResults: JestTestResult): string {

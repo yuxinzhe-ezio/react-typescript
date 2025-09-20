@@ -1,6 +1,14 @@
+// 🎯 Cloudflare Worker 完整版本 - 线上环境 (beta.plaud.ai)
+//
+// 使用说明：
+// 1. 核心路由逻辑部分（processRouting 及其依赖函数）可以从 online.worker.js 复制替换
+// 2. export default { fetch } 部分保持不变，无需修改
+// 3. 每次更新只需要替换 "=== 核心路由逻辑开始 ===" 到 "=== 核心路由逻辑结束 ===" 之间的代码
+// 4. 线上版本默认资源指向 plaud-web.pages.dev（旧版本）
+
 // =================================================================
 // === 核心路由逻辑开始 ===
-// 以下部分可以直接复制到 cloudflare-worker-online.js 中替换对应部分
+// 以下部分可以直接从 online.worker.js 复制替换
 // =================================================================
 
 function hashStringToPercentage(str) {
@@ -105,8 +113,66 @@ function processRouting({ inUrl, cookieHeader, headerEnv, grayPercentage, always
 
 // =================================================================
 // === 核心路由逻辑结束 ===
-// 以上部分可以直接复制到 cloudflare-worker-online.js 中替换对应部分
+// 以上部分可以直接从 online.worker.js 复制替换
 // =================================================================
 
-// 以下 export 仅用于测试，部署时不需要
-export { hashStringToPercentage, parseCookies, buildNewPagesOrigin, processRouting };
+// =================================================================
+// === Cloudflare Worker 入口点 - 此部分保持不变 ===
+// =================================================================
+
+export default {
+  async fetch(request, env) {
+    try {
+      const inUrl = new URL(request.url);
+      const cookieHeader = request.headers.get('cookie') || '';
+      const headerEnv = request.headers.get('x-pld-env');
+
+      // 调用核心路由逻辑
+      const targetHostname = processRouting({
+        inUrl,
+        cookieHeader,
+        headerEnv,
+        grayPercentage: env.GRAY_PERCENTAGE,
+        alwaysOldRoutes: env.ALWAYS_OLD_ROUTES,
+      });
+
+      // 构建目标 URL
+      inUrl.hostname = targetHostname;
+      const targetUrl = inUrl.toString();
+
+      // 日志记录（可选，生产环境可以移除）
+      console.log('🔄 Online Routing:', {
+        original: request.url,
+        target: targetUrl,
+        clientTag: parseCookies(cookieHeader)['x-pld-tag'],
+        env: headerEnv,
+        grayPercentage: env.GRAY_PERCENTAGE,
+        environment: 'online',
+      });
+
+      // 创建新的请求并转发
+      const outbound = new Request(targetUrl, {
+        method: request.method,
+        headers: request.headers,
+        body: request.body,
+      });
+
+      // 获取响应
+      const response = await fetch(outbound);
+
+      // 返回响应，保持原有的状态和头信息
+      return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+      });
+    } catch (error) {
+      // 错误处理
+      console.error('❌ Online Worker Error:', error);
+      return new Response('Internal Server Error', {
+        status: 500,
+        headers: { 'Content-Type': 'text/plain' },
+      });
+    }
+  },
+};

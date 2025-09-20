@@ -5,7 +5,13 @@
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:report": "tsx scripts/generate-test-report.ts",
+    "test:offline": "jest routing-logic.test.ts",
+    "test:online": "jest online-routing.test.ts",
+    "test:offline:watch": "jest routing-logic.test.ts --watch",
+    "test:online:watch": "jest online-routing.test.ts --watch",
+    "test:report": "tsx scripts/generate-offline-test-report.ts",
+    "test:report:offline": "tsx scripts/generate-offline-test-report.ts",
+    "test:report:online": "tsx scripts/generate-online-test-report.ts",
     "dev": "tsx scripts/test.ts"
   },
   "devDependencies": {

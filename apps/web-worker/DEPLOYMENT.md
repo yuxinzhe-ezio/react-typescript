@@ -2,7 +2,7 @@
 
 ## 📁 文件说明
 
-- **`cloudflare-worker-complete.js`** - 完整的 Cloudflare Worker 代码，可直接部署
+- **`cloudflare-worker-offline.js`** - 完整的 Cloudflare Worker 代码，可直接部署
 - **`src/offline.worker.js`** - 核心路由逻辑，用于开发和测试
 - **`DEPLOYMENT.md`** - 本部署指南
 
@@ -10,7 +10,7 @@
 
 ### 方式一：完整替换（推荐）
 
-直接将 `cloudflare-worker-complete.js` 的全部内容复制到 Cloudflare Workers 控制台。
+直接将 `cloudflare-worker-offline.js` 的全部内容复制到 Cloudflare Workers 控制台。
 
 ### 方式二：部分更新（高效）
 
@@ -18,7 +18,7 @@
 2. 只替换核心路由逻辑部分：
 
 ```javascript
-// 在 cloudflare-worker-complete.js 中找到这两行注释之间的代码：
+// 在 cloudflare-worker-offline.js 中找到这两行注释之间的代码：
 // === 核心路由逻辑开始 ===
 // ... 这里的代码可以从 offline.worker.js 复制替换
 // === 核心路由逻辑结束 ===
@@ -40,7 +40,7 @@ pnpm run test:report
 
 ### 2. 复制代码
 
-- 复制 `cloudflare-worker-complete.js` 的全部内容
+- 复制 `cloudflare-worker-offline.js` 的全部内容
 - 或者按照"方式二"进行部分更新
 
 ### 3. 部署到 Cloudflare Workers
@@ -105,7 +105,7 @@ pnpm test routing-logic.test.ts
 1. 在 `src/offline.worker.js` 中添加新函数
 2. 在 `tests/routing-logic.test.ts` 中添加对应测试
 3. 运行测试：`pnpm test`
-4. 更新 `cloudflare-worker-complete.js`
+4. 更新 `cloudflare-worker-offline.js`
 5. 部署到 Cloudflare Workers
 
 ## 📊 监控和调试

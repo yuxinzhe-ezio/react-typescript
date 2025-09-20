@@ -1,6 +1,6 @@
 // =================================================================
 // === 核心路由逻辑开始 ===
-// 以下部分可以直接复制到 cloudflare-worker-complete.js 中替换对应部分
+// 以下部分可以直接复制到 cloudflare-worker-offline.js 中替换对应部分
 // =================================================================
 
 function hashStringToPercentage(str) {
@@ -105,7 +105,7 @@ function processRouting({ inUrl, cookieHeader, headerEnv, grayPercentage, always
 
 // =================================================================
 // === 核心路由逻辑结束 ===
-// 以上部分可以直接复制到 cloudflare-worker-complete.js 中替换对应部分
+// 以上部分可以直接复制到 cloudflare-worker-offline.js 中替换对应部分
 // =================================================================
 
 // 以下 export 仅用于测试，部署时不需要
