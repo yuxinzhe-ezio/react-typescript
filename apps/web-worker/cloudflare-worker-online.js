@@ -107,13 +107,16 @@ export default {
       const targetUrl = inUrl.toString();
 
       // 日志记录（可选，生产环境可以移除）
-      console.log('🔄 Online Routing:', {
-        original: request.url,
-        target: targetUrl,
-        clientTag: parseCookies(cookieHeader)['x-pld-tag'],
-        grayPercentage: env.GRAY_PERCENTAGE,
-        environment: 'online',
-      });
+      console.log(
+        '🔄 Online Routing:',
+        JSON.stringify({
+          original: request.url,
+          target: targetUrl,
+          clientTag: parseCookies(cookieHeader)['x-pld-tag'],
+          grayPercentage: env.GRAY_PERCENTAGE,
+          environment: 'online',
+        })
+      );
 
       // 创建新的请求并转发
       const outbound = new Request(targetUrl, {
