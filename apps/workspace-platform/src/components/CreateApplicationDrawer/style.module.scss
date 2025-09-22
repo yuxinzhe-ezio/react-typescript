@@ -1,0 +1,153 @@
+.drawer {
+  .drawerTitle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+}
+
+.form {
+  .formItem {
+    margin-bottom: 16px;
+  }
+
+  .requiredField {
+    &::before {
+      content: '*';
+      color: #ff4d4f;
+      margin-right: 4px;
+    }
+  }
+
+  .disabledField {
+    background-color: #f5f5f5;
+    color: #999;
+  }
+
+  .hintText {
+    font-size: 12px;
+    color: #999;
+    margin-top: 4px;
+  }
+
+  .userSelect {
+    .userOption {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+  }
+
+  .radioGroup {
+    .radioItem {
+      margin-bottom: 8px;
+    }
+  }
+
+  .radioGroupHorizontal {
+    display: flex;
+    gap: 16px;
+  }
+
+  .cascaderSelect {
+    width: 100%;
+  }
+}
+
+.steps {
+  margin-bottom: 24px;
+}
+
+.stepContent {
+  .successStep {
+    text-align: center;
+    padding: 40px 0;
+
+    .successIcon {
+      font-size: 48px;
+      color: #52c41a;
+      margin-bottom: 16px;
+    }
+
+    .successTitle {
+      font-size: 16px;
+      font-weight: bold;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .successDescription {
+      color: #666;
+    }
+  }
+
+  .approvalStep {
+    text-align: center;
+    padding: 40px 0;
+
+    .approvalIcon {
+      font-size: 48px;
+      color: #1890ff;
+      margin-bottom: 16px;
+    }
+
+    .approvalTitle {
+      font-size: 16px;
+      font-weight: bold;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .approvalDescription {
+      color: #666;
+    }
+  }
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+// 远程搜索相关样式
+.searchSelect {
+  .searchOption {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .optionAvatar {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #1890ff;
+      color: white;
+      font-size: 12px;
+    }
+
+    .optionText {
+      flex: 1;
+    }
+  }
+}
+
+// 仓库选择相关样式
+.repositorySelect {
+  .repositoryOption {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .repositoryIcon {
+      color: #1890ff;
+    }
+
+    .repositoryText {
+      flex: 1;
+    }
+  }
+}

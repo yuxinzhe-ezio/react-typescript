@@ -1,0 +1,133 @@
+{
+  "info": {
+    "name": "Node Service API Tests",
+    "description": "API testing collection for the deployed node-service. Located in tools/testing/ directory.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "description": "Base URL of the deployed node-service. Change this to your actual server URL."
+    }
+  ],
+  "item": [
+    {
+      "name": "Demo Endpoints",
+      "item": [
+        {
+          "name": "Get Demo Message",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/demo",
+              "host": ["{{base_url}}"],
+              "path": ["demo"]
+            },
+            "description": "Test the basic demo endpoint to verify service is running"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Lark Callback Endpoints",
+      "item": [
+        {
+          "name": "Update Deployment Status",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"success\",\n  \"environment\": \"production\",\n  \"deploymentId\": \"deploy-{{$timestamp}}\",\n  \"message\": \"Deployment completed successfully\",\n  \"region\": \"global\",\n  \"timestamp\": \"{{$isoTimestamp}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/lark/callback/update-deployment-status",
+              "host": ["{{base_url}}"],
+              "path": ["lark", "callback", "update-deployment-status"]
+            },
+            "description": "Test the Lark deployment status callback endpoint"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Deployment Status - Failed",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"failed\",\n  \"environment\": \"production\",\n  \"deploymentId\": \"deploy-{{$timestamp}}\",\n  \"message\": \"Deployment failed due to build errors\",\n  \"error\": \"Build step failed with exit code 1\",\n  \"region\": \"global\",\n  \"timestamp\": \"{{$isoTimestamp}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/lark/callback/update-deployment-status",
+              "host": ["{{base_url}}"],
+              "path": ["lark", "callback", "update-deployment-status"]
+            },
+            "description": "Test the Lark deployment status callback endpoint with failure status"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Deployment Status - In Progress",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"in_progress\",\n  \"environment\": \"staging\",\n  \"deploymentId\": \"deploy-{{$timestamp}}\",\n  \"message\": \"Deployment is in progress\",\n  \"progress\": 45,\n  \"region\": \"cn\",\n  \"timestamp\": \"{{$isoTimestamp}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/lark/callback/update-deployment-status",
+              "host": ["{{base_url}}"],
+              "path": ["lark", "callback", "update-deployment-status"]
+            },
+            "description": "Test the Lark deployment status callback endpoint with in-progress status"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "Server Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/",
+              "host": ["{{base_url}}"],
+              "path": [""]
+            },
+            "description": "Basic health check to see if server is responding"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

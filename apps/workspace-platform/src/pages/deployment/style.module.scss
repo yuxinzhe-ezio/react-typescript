@@ -1,0 +1,194 @@
+.deploymentPage {
+  height: 100vh;
+  background: #f5f5f5;
+  padding: 16px;
+
+  .pageLayout {
+    height: 100%;
+  }
+
+  .leftPanel {
+    height: 100%;
+
+    .treeCard {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+
+      .searchSection {
+        margin-bottom: 16px;
+
+        .searchInput {
+          width: 100%;
+        }
+      }
+
+      .treeSection {
+        flex: 1;
+        overflow-y: auto;
+
+        .tree {
+          .ant-tree-node-content-wrapper {
+            padding: 4px 8px;
+            border-radius: 4px;
+
+            &:hover {
+              background: #f0f0f0;
+            }
+
+            &.ant-tree-node-selected {
+              background: #e6f7ff;
+            }
+          }
+
+          .ant-tree-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          }
+        }
+      }
+    }
+  }
+
+  .rightPanel {
+    height: 100%;
+
+    .contentArea {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+
+      .breadcrumb {
+        background: white;
+        padding: 16px 24px;
+        border-radius: 6px;
+        margin-bottom: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        .visitLink {
+          color: #1890ff;
+        }
+      }
+
+      .versionCard {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+
+        .versionHeader {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 16px;
+          padding-bottom: 16px;
+          border-bottom: 1px solid #f0f0f0;
+
+          .versionTitle {
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          }
+
+          .versionSearch {
+            width: 200px;
+            margin-right: 12px;
+          }
+        }
+
+        .versionList {
+          flex: 1;
+          overflow-y: auto;
+
+          .versionItem {
+            border: 1px solid #f0f0f0;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            padding: 16px;
+            background: white;
+
+            &:hover {
+              border-color: #d9d9d9;
+              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            }
+
+            .versionContent {
+              width: 100%;
+
+              .versionHeader {
+                margin-bottom: 8px;
+                border: none;
+                padding: 0;
+              }
+
+              .commitMessage {
+                font-size: 16px;
+                font-weight: 500;
+                margin-bottom: 8px;
+                color: #262626;
+              }
+
+              .deployInfo {
+                margin-bottom: 4px;
+                font-size: 14px;
+              }
+
+              .completedAt {
+                margin-bottom: 12px;
+                font-size: 14px;
+              }
+
+              .pipeline {
+                margin-bottom: 12px;
+
+                .pipelineTag {
+                  margin: 0;
+                  border-radius: 50%;
+                  width: 24px;
+                  height: 24px;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-size: 12px;
+                  font-weight: bold;
+                }
+              }
+
+              .identifiers {
+                .fireIcon {
+                  color: #ff7a00;
+                  margin-right: 4px;
+                }
+
+                .commitCode {
+                  color: #ff7a00;
+                  background: #fff2e8;
+                  border: 1px solid #ffd591;
+                }
+
+                .mrCode {
+                  color: #1890ff;
+                  background: #e6f7ff;
+                  border: 1px solid #91d5ff;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    .emptyState {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: white;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+  }
+}

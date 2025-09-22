@@ -3,7 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "nest start --watch"
+    "dev": "nest start --watch",
+    "build": "nest build",
+    "start": "node dist/main",
+    "start:prod": "NODE_ENV=production node dist/main",
+    "test:api": "node testing/test-deployed-service.js",
+    "test:api:local": "node testing/test-deployed-service.js http://localhost:8080",
+    "test:api:help": "node testing/test-deployed-service.js --help"
   },
   "dependencies": {
     "@larksuiteoapi/node-sdk": "1.55.0",

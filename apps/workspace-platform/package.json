@@ -1,5 +1,5 @@
 {
-  "name": "web2",
+  "name": "@plaud/workspace-platform",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -10,6 +10,7 @@
     "lint:fix": "cd ../.. && pnpm eslint apps/web2/src --fix"
   },
   "dependencies": {
+    "@ant-design/icons": "6.0.2",
     "antd": "5.26.7",
     "garfish": "1.19.5",
     "react": "18.3.1",
