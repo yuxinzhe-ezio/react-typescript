@@ -58,6 +58,12 @@ describe('Routing Logic (灰度发布和路由转发)', () => {
     it('应该处理根域名', () => {
       expect(buildNewPagesOrigin('theplaud.com')).toBe('https://theplaud.com');
     });
+
+    it('应该处理 h5 项目域名', () => {
+      expect(buildNewPagesOrigin('h5.theplaud.com')).toBe(
+        'https://test-h5.plaud-h5-web3.pages.dev'
+      );
+    });
   });
 
   describe('testRouting - 核心路由逻辑测试', () => {
@@ -173,6 +179,17 @@ describe('Routing Logic (灰度发布和路由转发)', () => {
       expect(result).toHaveProperty('oldRoutes');
       expect(result).toHaveProperty('originalHost');
       expect(result).toHaveProperty('path');
+    });
+
+    it('h5 项目路由应该使用 h5 专用域名', () => {
+      const result = testRouting('https://h5.theplaud.com/mobile-app', {
+        cookieHeader: 'x-pld-tag=h5user', // hash: 根据实际哈希值
+        grayPercentage: 50,
+      });
+
+      expect(result.targetHostname).toBe('test-h5.plaud-h5-web3.pages.dev');
+      expect(result.targetUrl).toBe('https://test-h5.plaud-h5-web3.pages.dev/mobile-app');
+      expect(result.originalHost).toBe('h5.theplaud.com');
     });
   });
 
@@ -314,6 +331,48 @@ describe('Routing Logic (灰度发布和路由转发)', () => {
 
       expect(result.targetHostname).toBe('api.theplaud.com'); // 保持原域名
       expect(result.targetUrl).toBe('https://api.theplaud.com/health');
+    });
+
+    // H5 项目测试 - h5.theplaud.com 专门测试
+    it('访问 h5.theplaud.com 应该返回 h5 项目默认域名', () => {
+      const result = testRouting('https://h5.theplaud.com/app', {
+        cookieHeader: 'x-pld-tag=user789', // hash: 15% (新版本)
+        grayPercentage: 50,
+      });
+
+      expect(result.targetHostname).toBe('test-h5.plaud-h5-web3.pages.dev');
+      expect(result.targetUrl).toBe('https://test-h5.plaud-h5-web3.pages.dev/app');
+    });
+
+    it('h5.theplaud.com 带 x-pld-env 环境头应该使用环境模板', () => {
+      const result = testRouting('https://h5.theplaud.com/mobile', {
+        cookieHeader: 'x-pld-tag=user123', // hash: 73% (旧版本，但环境头优先)
+        headerEnv: 'dev',
+        grayPercentage: 50,
+      });
+
+      expect(result.targetHostname).toBe('dev-h5.plaud-h5-web3.pages.dev');
+      expect(result.targetUrl).toBe('https://dev-h5.plaud-h5-web3.pages.dev/mobile');
+    });
+
+    it('h5.theplaud.com 高哈希用户在低灰度下应该使用默认域名', () => {
+      const result = testRouting('https://h5.theplaud.com/settings', {
+        cookieHeader: 'x-pld-tag=user123', // hash: 73% (旧版本)
+        grayPercentage: 30, // 低灰度
+      });
+
+      // h5 项目在 offline 环境没有区分新旧版本，都使用 defaultDomain
+      expect(result.targetHostname).toBe('test-h5.plaud-h5-web3.pages.dev');
+      expect(result.targetUrl).toBe('https://test-h5.plaud-h5-web3.pages.dev/settings');
+    });
+
+    it('h5.theplaud.com 无用户标识应该使用默认域名', () => {
+      const result = testRouting('https://h5.theplaud.com/home', {
+        grayPercentage: 50,
+      });
+
+      expect(result.targetHostname).toBe('test-h5.plaud-h5-web3.pages.dev');
+      expect(result.targetUrl).toBe('https://test-h5.plaud-h5-web3.pages.dev/home');
     });
 
     it('30% 灰度 - 低哈希用户命中新版本', () => {

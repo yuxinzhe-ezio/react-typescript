@@ -231,6 +231,7 @@ function generateDetailedResults(testResults: JestTestResult): string {
             test.title.includes('api.') ||
             test.title.includes('test.') ||
             test.title.includes('www.') ||
+            test.title.includes('h5.') ||
             test.title.includes('theplaud.com') ||
             test.title.includes('plaud.com') ||
             // 这些测试虽然标题中没有直接包含域名，但实际测试中有具体的访问地址
@@ -242,7 +243,8 @@ function generateDetailedResults(testResults: JestTestResult): string {
             test.title.includes('100% 灰度应该所有用户都是新版本') ||
             test.title.includes('0% 灰度应该所有用户都是旧版本') ||
             test.title.includes('应该正确处理复杂的 URL') ||
-            test.title.includes('应该返回完整的调试信息');
+            test.title.includes('应该返回完整的调试信息') ||
+            test.title.includes('h5 项目路由应该使用 h5 专用域名');
 
           if (hasSpecificUrl) {
             testsWithUrl.push({ test, status, assertions });
@@ -273,63 +275,63 @@ function generateDetailedResults(testResults: JestTestResult): string {
               accessUrl = 'app.theplaud.com/dashboard';
               userTag = 'user789';
               grayPercentage = '50%';
-              resultUrl = 'app.plaud-web3.pages.dev';
+              resultUrl = 'app-web.plaud-web-web.pages.dev';
               grayHit = '✅ 命中 (15% < 50%)';
             } else if (test.title.includes('高哈希用户应该路由到旧版本')) {
               accessUrl = 'app.theplaud.com/dashboard';
               userTag = 'user123';
               grayPercentage = '50%';
-              resultUrl = 'test.plaud-web-dist.pages.dev';
+              resultUrl = 'test-web.plaud-web-dist.pages.dev';
               grayHit = '❌ 未命中 (73% > 50%)';
             } else if (test.title.includes('环境头应该优先于其他逻辑')) {
               accessUrl = 'app.theplaud.com/dashboard';
               userTag = 'user123';
               envHeader = 'staging';
               grayPercentage = '0%';
-              resultUrl = 'staging.plaud-web3.pages.dev';
+              resultUrl = 'staging-web.plaud-web-web.pages.dev';
               grayHit = '🔄 环境头优先';
             } else if (test.title.includes('没有客户端标签应该默认旧版本')) {
               accessUrl = 'app.theplaud.com/dashboard';
               userTag = '无';
               grayPercentage = '50%';
-              resultUrl = 'test.plaud-web-dist.pages.dev';
+              resultUrl = 'test-web.plaud-web-dist.pages.dev';
               grayHit = '❌ 默认旧版本';
             } else if (test.title.includes('100% 灰度应该所有用户都是新版本')) {
               accessUrl = 'app.theplaud.com/dashboard';
               userTag = 'user123';
               grayPercentage = '100%';
-              resultUrl = 'app.plaud-web3.pages.dev';
+              resultUrl = 'app-web.plaud-web-web.pages.dev';
               grayHit = '✅ 命中 (73% < 100%)';
             } else if (test.title.includes('0% 灰度应该所有用户都是旧版本')) {
               accessUrl = 'app.theplaud.com/dashboard';
               userTag = 'user789';
               grayPercentage = '0%';
-              resultUrl = 'test.plaud-web-dist.pages.dev';
+              resultUrl = 'test-web.plaud-web-dist.pages.dev';
               grayHit = '❌ 未命中 (15% > 0%)';
             } else if (test.title.includes('30% 灰度 - 低哈希用户命中新版本')) {
               accessUrl = 'app.theplaud.com/dashboard';
               userTag = 'user789';
               grayPercentage = '30%';
-              resultUrl = 'app.plaud-web3.pages.dev';
+              resultUrl = 'app-web.plaud-web-web.pages.dev';
               grayHit = '✅ 命中 (15% < 30%)';
             } else if (test.title.includes('30% 灰度 - 高哈希用户不命中灰度使用旧版本')) {
               accessUrl = 'app.theplaud.com/dashboard';
               userTag = 'user123';
               grayPercentage = '30%';
-              resultUrl = 'test.plaud-web-dist.pages.dev';
+              resultUrl = 'test-web.plaud-web-dist.pages.dev';
               grayHit = '❌ 未命中 (73% > 30%)';
             } else if (test.title.includes('80% 灰度 - 中等哈希用户命中新版本')) {
               accessUrl = 'app.theplaud.com/dashboard';
               userTag = 'user456';
               grayPercentage = '80%';
-              resultUrl = 'test.plaud-web-dist.pages.dev';
+              resultUrl = 'test-web.plaud-web-dist.pages.dev';
               grayHit = '❌ 未命中 (94% > 80%)';
             } else if (test.title.includes('环境头优先级测试')) {
               accessUrl = 'app.theplaud.com/dashboard';
               userTag = 'user123';
               envHeader = 'dev';
               grayPercentage = '50%';
-              resultUrl = 'dev.plaud-web3.pages.dev';
+              resultUrl = 'dev-web.plaud-web-web.pages.dev';
               grayHit = '🔄 环境头优先';
             } else if (test.title.includes('白名单域名测试')) {
               if (test.title.includes('api.theplaud.com')) {
@@ -354,9 +356,12 @@ function generateDetailedResults(testResults: JestTestResult): string {
               userTag = 'user123';
               envHeader = 'staging';
               grayPercentage = '20%';
-              resultUrl = 'staging.plaud-web3.pages.dev';
+              resultUrl = 'staging-web.plaud-web-web.pages.dev';
               grayHit = '🔄 环境头优先';
-            } else if (test.title.includes('访问') && test.title.includes('theplaud.com')) {
+            } else if (
+              (test.title.includes('访问') && test.title.includes('theplaud.com')) ||
+              test.title.includes('h5.theplaud.com')
+            ) {
               // 处理具体访问地址的测试
               if (test.title.includes('test.theplaud.com')) {
                 if (test.title.includes('x-pld-env: test3')) {
@@ -364,26 +369,26 @@ function generateDetailedResults(testResults: JestTestResult): string {
                   userTag = 'user123';
                   envHeader = 'test3';
                   grayPercentage = '50%';
-                  resultUrl = 'test3.plaud-web3.pages.dev';
+                  resultUrl = 'test3-web.plaud-web-web.pages.dev';
                   grayHit = '🔄 环境头优先';
                 } else if (test.title.includes('高哈希用户访问')) {
                   accessUrl = 'test.theplaud.com/dashboard';
                   userTag = 'user123';
                   grayPercentage = '50%';
-                  resultUrl = 'test.plaud-web-dist.pages.dev';
+                  resultUrl = 'test-web.plaud-web-dist.pages.dev';
                   grayHit = '❌ 未命中 (73% > 50%)';
                 } else {
                   accessUrl = 'test.theplaud.com/dashboard';
                   userTag = 'user789';
                   grayPercentage = '50%';
-                  resultUrl = 'test.plaud-web3.pages.dev';
+                  resultUrl = 'test-web.plaud-web-web.pages.dev';
                   grayHit = '✅ 命中 (15% < 50%)';
                 }
               } else if (test.title.includes('app.theplaud.com')) {
                 accessUrl = 'app.theplaud.com/profile';
                 userTag = 'user789';
                 grayPercentage = '50%';
-                resultUrl = 'app.plaud-web3.pages.dev';
+                resultUrl = 'app-web.plaud-web-web.pages.dev';
                 grayHit = '✅ 命中 (15% < 50%)';
               } else if (test.title.includes('api.theplaud.com')) {
                 accessUrl = 'api.theplaud.com/v1/users';
@@ -392,6 +397,34 @@ function generateDetailedResults(testResults: JestTestResult): string {
                 grayPercentage = '50%';
                 resultUrl = 'api.theplaud.com';
                 grayHit = '⚪ 白名单域名';
+              } else if (test.title.includes('h5.theplaud.com')) {
+                if (test.title.includes('带 x-pld-env 环境头')) {
+                  accessUrl = 'h5.theplaud.com/mobile';
+                  userTag = 'user123';
+                  envHeader = 'dev';
+                  grayPercentage = '50%';
+                  resultUrl = 'dev-h5.plaud-web-h5.pages.dev';
+                  grayHit = '🔄 环境头优先';
+                } else if (test.title.includes('高哈希用户在低灰度下')) {
+                  accessUrl = 'h5.theplaud.com/settings';
+                  userTag = 'user123';
+                  grayPercentage = '30%';
+                  resultUrl = 'test-h5.plaud-web-h5.pages.dev';
+                  grayHit = '❌ 未命中 (73% > 30%)';
+                } else if (test.title.includes('无用户标识')) {
+                  accessUrl = 'h5.theplaud.com/home';
+                  userTag = '无';
+                  grayPercentage = '50%';
+                  resultUrl = 'test-h5.plaud-web-h5.pages.dev';
+                  grayHit = '🔄 默认新版本';
+                } else {
+                  // 默认的 h5 访问测试
+                  accessUrl = 'h5.theplaud.com/app';
+                  userTag = 'user789';
+                  grayPercentage = '50%';
+                  resultUrl = 'test-h5.plaud-web-h5.pages.dev';
+                  grayHit = '✅ h5 专用域名';
+                }
               } else if (test.title.includes('www.theplaud.com')) {
                 accessUrl = 'www.theplaud.com/about';
                 userTag = '无';
@@ -410,32 +443,38 @@ function generateDetailedResults(testResults: JestTestResult): string {
               accessUrl = 'admin.theplaud.com/legacy/users';
               userTag = 'user789';
               grayPercentage = '50%';
-              resultUrl = 'test.plaud-web-dist.pages.dev';
+              resultUrl = 'test-web.plaud-web-dist.pages.dev';
               grayHit = '强制旧版本 (/legacy)';
             } else if (test.title.includes('应该正确处理复杂的 URL')) {
               accessUrl = 'admin.theplaud.com/v1/users?id=123&type=admin';
               userTag = 'admin';
               grayPercentage = '50%';
-              resultUrl = 'test.plaud-web-dist.pages.dev';
+              resultUrl = 'test-web.plaud-web-dist.pages.dev';
               grayHit = '❌ 未命中 (51% > 50%)';
             } else if (test.title.includes('应该返回完整的调试信息')) {
               accessUrl = 'app.theplaud.com/dashboard';
               userTag = 'testuser';
               grayPercentage = '30%';
-              resultUrl = 'test.plaud-web-dist.pages.dev';
+              resultUrl = 'test-web.plaud-web-dist.pages.dev';
               grayHit = '❌ 未命中 (75% > 30%)';
+            } else if (test.title.includes('h5 项目路由应该使用 h5 专用域名')) {
+              accessUrl = 'h5.theplaud.com/mobile-app';
+              userTag = 'h5user';
+              grayPercentage = '50%';
+              resultUrl = 'test-h5.plaud-web-h5.pages.dev';
+              grayHit = '✅ h5 专用域名';
             } else if (test.title.includes('复杂子域名测试')) {
               accessUrl = 'admin.api.theplaud.com';
               userTag = 'admin';
               grayPercentage = '100%';
-              resultUrl = 'test.plaud-web3.pages.dev';
+              resultUrl = 'test-web.plaud-web-web.pages.dev';
               grayHit = '✅ 命中 (51% < 100%)';
             } else if (test.title.includes('带查询参数的URL')) {
               accessUrl = 'app.theplaud.com/dashboard?id=123';
               userTag = 'user789';
               envHeader = 'test3';
               grayPercentage = '50%';
-              resultUrl = 'test3.plaud-web3.pages.dev';
+              resultUrl = 'test3-web.plaud-web-web.pages.dev';
               grayHit = '🔄 环境头优先';
             } else if (test.title.includes('50% 灰度边界测试')) {
               accessUrl = 'app.theplaud.com/dashboard';

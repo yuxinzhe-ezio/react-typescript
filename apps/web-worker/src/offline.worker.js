@@ -3,6 +3,35 @@
 // 以下部分可以直接复制到 cloudflare-worker-offline.js 中替换对应部分
 // =================================================================
 
+// 白名单：这些域名不做路由处理
+const WHITELIST = ['api.theplaud.com', 'www.theplaud.com', 'theplaud.com'];
+
+/**
+ * 🎯 项目配置 - 支持多项目路由规则
+ */
+const PROJECT_CONFIG = {
+  h5: {
+    domains: ['h5.theplaud.com'],
+    defaultDomain: 'test-h5.plaud-h5-web3.pages.dev',
+    envTemplate: '{env}-h5.plaud-h5-web3.pages.dev',
+  },
+  web: {
+    domainPattern: '*.theplaud.com',
+    newVersionTemplate: '{env}.plaud-web3.pages.dev',
+    oldVersionDomain: 'test.plaud-web-dist.pages.dev',
+    defaultNewDomain: 'test.plaud-web3.pages.dev',
+  },
+};
+
+function getProjectConfig(hostname) {
+  // h5 项目优先匹配
+  if (hostname === 'h5.theplaud.com') {
+    return { ...PROJECT_CONFIG.h5, projectName: 'h5' };
+  }
+  // 其他 theplaud.com 域名都匹配到 web 项目
+  return { ...PROJECT_CONFIG.web, projectName: 'web' };
+}
+
 function hashStringToPercentage(str) {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
@@ -23,87 +52,67 @@ function parseCookies(cookieHeader = '') {
   return cookies;
 }
 
-function buildNewPagesOrigin(hostname) {
-  // 白名单：这些域名不做路由处理，直接返回原域名
-  const whitelist = ['api.theplaud.com', 'www.theplaud.com', 'theplaud.com'];
-  if (whitelist.includes(hostname)) {
-    return `https://${hostname}`;
-  }
+// 获取域名的辅助函数
+function getDomain(config, isOld = false) {
+  return isOld
+    ? config.oldVersionDomain || config.defaultDomain || config.defaultNewDomain
+    : config.defaultDomain || config.defaultNewDomain;
+}
 
+function buildNewPagesOrigin(hostname) {
+  if (WHITELIST.includes(hostname)) return `https://${hostname}`;
+
+  const config = getProjectConfig(hostname);
   const parts = hostname.split('.');
 
-  // 处理 theplaud.com 和 plaud.com 域名
-  if (hostname.includes('theplaud.com') || hostname.includes('plaud.com')) {
-    if (parts.length === 3) {
-      // 子域名：test.theplaud.com -> test.plaud-web3.pages.dev
-      const [sub] = parts;
-      return `https://${sub}.plaud-web3.pages.dev`;
-    } else if (parts.length === 2) {
-      // 根域名：theplaud.com -> test.plaud-web3.pages.dev (兜底)
-      return 'https://test.plaud-web3.pages.dev';
-    }
-    // 复杂子域名 (>3 parts)：admin.api.theplaud.com -> test.plaud-web3.pages.dev (兜底)
-    return 'https://test.plaud-web3.pages.dev';
+  // h5 项目直接使用默认域名
+  if (config.projectName === 'h5') {
+    return `https://${getDomain(config)}`;
   }
 
-  // 原有逻辑保持不变
-  if (parts.length === 3) {
+  // web 项目：保持子域名映射，使用原有格式
+  if (parts.length === 3 && hostname.includes('theplaud.com')) {
     const [sub] = parts;
     return `https://${sub}.plaud-web3.pages.dev`;
   }
-  return 'https://plaud-web3.pages.dev';
+
+  // 兜底使用默认域名
+  return `https://${getDomain(config)}`;
 }
 
-/**
- * 🎯 核心路由逻辑 - 处理灰度发布和域名转发
- * @param {Object} params - 参数对象
- * @param {URL} params.inUrl - URL 对象
- * @param {string} params.cookieHeader - Cookie 头信息
- * @param {string} params.headerEnv - x-pld-env 头信息
- * @param {number} params.grayPercentage - 灰度百分比
- * @param {string} params.alwaysOldRoutes - 总是使用旧版本的路由
- * @returns {string} 返回目标主机名
- */
 function processRouting({ inUrl, cookieHeader, headerEnv, grayPercentage, alwaysOldRoutes }) {
-  const host = inUrl.hostname;
-  const path = inUrl.pathname;
+  const { hostname, pathname } = inUrl;
 
-  // 白名单：这些域名不做路由处理，直接返回原域名
-  const whitelist = ['api.theplaud.com', 'www.theplaud.com', 'theplaud.com'];
-  if (whitelist.includes(host)) {
-    return host;
-  }
+  if (WHITELIST.includes(hostname)) return hostname;
 
-  const cookies = parseCookies(cookieHeader || '');
-  const clientTag = cookies['x-pld-tag'];
-  const GRAY_PERCENTAGE = grayPercentage !== undefined ? parseInt(grayPercentage) : 100;
+  const config = getProjectConfig(hostname);
+  const clientTag = parseCookies(cookieHeader)['x-pld-tag'];
+  const grayPercent = grayPercentage !== undefined ? parseInt(grayPercentage) : 100;
   const oldRoutes = (alwaysOldRoutes || '')
     .split(',')
     .map(s => s.trim())
     .filter(Boolean);
 
-  let useNewVersion = true; // 默认使用新版本（升级）
-  if (clientTag) {
-    const hash = hashStringToPercentage(clientTag);
-    useNewVersion = hash < GRAY_PERCENTAGE;
-  } else {
-    // 没有客户端标签时默认使用新版本
-    useNewVersion = true;
-  }
+  // 判断是否使用新版本
+  const useNewVersion = !clientTag || hashStringToPercentage(clientTag) < grayPercent;
 
-  let targetHostname;
-
+  // 环境分流优先
   if (headerEnv) {
-    targetHostname = `${headerEnv}.plaud-web3.pages.dev`;
-  } else if (oldRoutes.some(r => path.startsWith(r))) {
-    targetHostname = 'test.plaud-web-dist.pages.dev';
-  } else if (useNewVersion) {
-    targetHostname = buildNewPagesOrigin(host).replace('https://', '');
-  } else {
-    targetHostname = 'test.plaud-web-dist.pages.dev';
+    const template = config.envTemplate || config.newVersionTemplate;
+    return template ? template.replace('{env}', headerEnv) : getDomain(config);
   }
 
-  return targetHostname;
+  // 强制旧版本路由
+  if (oldRoutes.some(r => pathname.startsWith(r))) {
+    return getDomain(config, true);
+  }
+
+  // 新版本 vs 旧版本
+  if (useNewVersion) {
+    return buildNewPagesOrigin(hostname).replace('https://', '');
+  } else {
+    return getDomain(config, true);
+  }
 }
 
 // =================================================================
